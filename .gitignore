@@ -1,7 +1,7 @@
 # C
 
 # Python
-.pyc
+*.pyc
 
 # General
 tags
