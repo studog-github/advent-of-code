@@ -1,0 +1,151 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+class pipe:
+    def __init__(self, (a, b)):
+        self.a = a
+        self.a_used = False
+        self.b = b
+        self.b_used = False
+        self.value = self.a + self.b
+
+    def __repr__(self):
+        s = "{"
+        s += " " + format(self.a, "2d")
+        s += "/"
+        s += " " + format(self.b, "2d")
+        s += "  "
+        s += ("Y" if self.a_used else "N")
+        s += "/"
+        s += ("Y" if self.b_used else "N")
+        s += "  "
+        s += format(self.value, "3d")
+        s += " }"
+        return s
+
+    def mark_used(self, n):
+        if not self.a_used and self.a == n:
+            self.a_used = True
+        elif not self.b_used and self.b == n:
+            self.b_used = True
+
+    def mark_unused(self, n):
+        if self.a_used and self.a == n:
+            self.a_used = False
+        elif self.b_used and self.b == n:
+            self.b_used = False
+
+    def get_unused_val(self):
+        if not self.a_used:
+            return self.a
+        elif not self.b_used:
+            return self.b
+
+    def is_used(self):
+        return self.a_used or self.b_used
+
+    def match(self, n):
+        if self.a == n or self.b == n:
+            return True
+        return False
+
+def extend_bridge(bridge, pipes, num_pipes, indent):
+    end_val = bridge[-1].get_unused_val()
+    best_bridge = bridge[:]
+    #print indent +"sb:", bridge
+
+    for i in xrange(num_pipes):
+        p = pipes[i]
+        #dbg_str = indent + "considering pipe:" + str(p)
+        #if p.is_used() or not p.match(end_val):
+            #continue
+        if p.is_used():
+            #print dbg_str + " IN USE"
+            continue
+        if not p.match(end_val):
+            #print dbg_str + " NO MATCH"
+            continue
+        #print dbg_str + " OK"
+        p.mark_used(end_val)
+        bridge[0] += p.value
+        bridge.append(p)
+        returned_bridge = extend_bridge(bridge, pipes, num_pipes, indent + "  ")
+        #print indent + "bb:", best_bridge
+        #print indent + " b:", returned_bridge
+        if returned_bridge[0] > best_bridge[0]:
+            # May need to make a shallow copy here, but I don't think so right meow
+            best_bridge = returned_bridge
+        del bridge[-1]
+        bridge[0] -= p.value
+        p.mark_unused(end_val)
+
+    #print indent + "rb:", best_bridge
+    return best_bridge
+
+def find_bridge(pipes, num_pipes):
+    best_bridge = None
+
+    for i in xrange(num_pipes):
+        p = pipes[i]
+        if p.a != 0 and p.b != 0:
+            break
+        #print "starting pipe:", p
+        p.mark_used(0)
+        bridge = [p.value, p]
+        returned_bridge = extend_bridge(bridge, pipes, num_pipes, "  ")
+        #print "bb:", best_bridge
+        #print " b:", returned_bridge
+        if best_bridge is None or returned_bridge[0] > best_bridge[0]:
+            # Again, may need a shallow copy, but I don't think so
+            best_bridge = returned_bridge
+        p.mark_unused(0)
+        
+    return best_bridge
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    pipes = []
+    for line in input:
+        pipes.append(pipe(map(int, line.strip().split('/'))))
+    pipes.sort(key = lambda e: sorted([e.a, e.b]))
+    num_pipes = len(pipes)
+    print "num:", num_pipes
+    for p in pipes:
+        print p
+    print
+
+    bridge = find_bridge(pipes, num_pipes)
+    print bridge
+
+    print "ans:", bridge[0]
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

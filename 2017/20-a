@@ -1,0 +1,127 @@
+#!/usr/bin/python
+
+PROBLEM_NUMBER = "20-a"
+
+import sys
+import os
+import argparse
+from libstu import *
+import re
+
+x = 0
+y = 1
+z = 2
+
+class particle:
+    def __init__(self, num, pos, vel, acc):
+        self.num = num
+        self.posv = pos
+        self.velv = vel
+        self.accv = acc
+        self.accel = abs(self.accv[x]) + abs(self.accv[y]) + abs(self.accv[z])
+        self.__update()
+
+    def __repr__(self):
+        s = "{"
+        s += " [" + str(self.num) + "]"
+        s += " posv" + str(self.posv)
+        s += " velv" + str(self.velv)
+        s += " accv" + str(self.accv)
+        s += " mdist: " + str(self.mdist)
+        s += " veloc: " + str(self.veloc)
+        s += " accel: " + str(self.accel)
+        s += " homing: " + str(self.homing)
+        s += " slowing: " + str(self.slowing)
+        s += " }"
+        return s
+
+    def __update(self):
+        self.mdist = abs(self.posv[x]) + abs(self.posv[y]) + abs(self.posv[z])
+        self.veloc = abs(self.velv[x]) + abs(self.velv[y]) + abs(self.velv[z])
+        if ((self.velv[x] != 0 and not signeq(self.posv[x], self.velv[x])) or
+                    (self.velv[y] != 0 and not signeq(self.posv[y], self.velv[y])) or
+                    (self.velv[z] != 0 and not signeq(self.posv[z], self.velv[z]))):
+            self.homing = True
+        else:
+            self.homing = False
+        if ((self.accv[x] != 0 and not signeq(self.velv[x], self.accv[x])) or
+                    (self.accv[y] != 0 and not signeq(self.velv[y], self.accv[y])) or
+                    (self.accv[z] != 0 and not signeq(self.velv[z], self.accv[z]))):
+            self.slowing = True
+        else:
+            self.slowing = False
+
+    def move(self):
+        self.velv[x] += self.accv[x]
+        self.velv[y] += self.accv[y]
+        self.velv[z] += self.accv[z]
+        self.posv[x] += self.velv[x]
+        self.posv[y] += self.velv[y]
+        self.posv[z] += self.velv[z]
+        self.__update()
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = PROBLEM_NUMBER + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    particles = []
+    i = 0
+    for line in input:
+        line = line.strip()
+        line = re.split('[pav]=<([^,]+,[^,]+,[^,]+)>', line)[1::2]
+        line = [map(int, x.split(',')) for x in line]
+        #print line
+        particles.append(particle(i, line[0], line[1], line[2]))
+        #print particles[i]
+        i += 1
+
+    particles.sort(key=lambda e: e.accel)
+    for i in xrange(1, len(particles)):
+        if particles[i].accel > particles[i - 1].accel:
+            del particles[i:]
+            break
+    if len(particles) > 1:
+        while True:
+            for p in particles:
+                print p
+            print
+            slowing = sum([p.slowing for p in particles])
+            homing = sum([p.homing for p in particles])
+            if not slowing and not homing:
+                particles.sort(key=lambda e: e.veloc)
+                break;
+            for p in particles:
+                p.move()
+
+    print "Sorted by veloc:"
+    for p in particles:
+        print p
+    print
+
+    print particles[0]
+    print "ans:", particles[0].num
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

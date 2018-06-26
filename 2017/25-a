@@ -1,0 +1,109 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+class machine:
+    def __init__(self, start_state, num_steps, rules):
+        self.start_state = start_state
+        self.num_steps = num_steps
+        self.rules = rules
+
+        self.state = self.start_state
+        self.steps = 0
+        self.cursor = 0
+        self.tape = [0]
+
+    def __repr__(self):
+        s = "{"
+        s += " " + str(self.steps)
+        s += " " + self.state
+        s += " " + str(self.cursor)
+        s += " " + str(self.tape)
+        s += " }"
+        return s
+
+    def run(self):
+        #print "Running until %d..." % (self.num_steps)
+        #print self
+        #print
+        while self.steps < self.num_steps:
+            k = (self.state, self.tape[self.cursor])
+            r = self.rules[k]
+            #print k, "=>", r
+            self.tape[self.cursor] = r[0]
+            if r[1] == 'r':
+                self.cursor += 1
+                if self.cursor >= len(self.tape):
+                    self.tape.append(0)
+            else:
+                self.cursor -= 1
+                if self.cursor < 0:
+                    self.tape.insert(0, 0)
+                    self.cursor = 0
+            self.state = r[2]
+            self.steps += 1
+            #print self
+            #print
+
+        return ''.join(map(str, self.tape)).count('1')
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    begin_state = re.search("Begin in state (.)", input.readline()).group(1)
+    num_steps = int(re.search("Perform a diagnostic checksum after (\d+)", input.readline()).group(1))
+    print begin_state, num_steps
+
+    rules = {}
+    while input.readline() != "":
+        state = re.search("In state (.)", input.readline()).group(1)
+        value = int(re.search("If the current value is (.)", input.readline()).group(1))
+        write = int(re.search("Write the value (.)", input.readline()).group(1))
+        move = re.search("Move one slot to the (.)", input.readline()).group(1)
+        next_state = re.search("Continue with state (.)", input.readline()).group(1)
+        #print "(%s, %s) => [%s, %s, %s]" % (state, value, write, move, next_state)
+        rules[(state, value)] = [write, move, next_state]
+        value = int(re.search("If the current value is (.)", input.readline()).group(1))
+        write = int(re.search("Write the value (.)", input.readline()).group(1))
+        move = re.search("Move one slot to the (.)", input.readline()).group(1)
+        next_state = re.search("Continue with state (.)", input.readline()).group(1)
+        #print "(%s, %s) => [%s, %s, %s]" % (state, value, write, move, next_state)
+        rules[(state, value)] = [write, move, next_state]
+    for r in rules:
+        print r, "=>", rules[r]
+    print
+
+    m = machine(begin_state, num_steps, rules)
+    chksum = m.run()
+
+    print "ans:", chksum
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

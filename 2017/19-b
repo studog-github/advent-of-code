@@ -1,0 +1,85 @@
+#!/usr/bin/python
+
+PROBLEM_NUMBER = "19-a"
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = PROBLEM_NUMBER + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    lines = []
+    for line in input:
+        lines.append(line.rstrip('\n'))
+    num_lines = len(lines)
+    num_cols = len(lines[0])
+
+    letters = []
+    steps = 1
+    dir = 'd'
+    pos = [0, lines[0].index('|')]
+    print "pos:", pos, "dir:", dir, "steps:", steps
+
+    while True:
+        if dir == 'd':
+            pos[0] += 1
+        elif dir == 'u':
+            pos[0] -= 1
+        elif dir == 'r':
+            pos[1] += 1
+        elif dir == 'l':
+            pos[1] -= 1
+        square = lines[pos[0]][pos[1]]
+        steps += 1
+        print "pos:", pos, "dir:", dir, "steps:", steps, "square:", square
+        if square == ' ':
+            steps -= 1
+            break
+        elif square == '|':
+            pass
+        elif square == '-':
+            pass
+        elif square == '+':
+            if dir == 'd' or dir == 'u':
+                if lines[pos[0]][pos[1] + 1] != ' ':
+                    dir = 'r'
+                else:
+                    dir = 'l'
+            else:
+                if lines[pos[0] + 1][pos[1]] != ' ':
+                    dir = 'd'
+                else:
+                    dir = 'u'
+        else:
+            letters.append(square)
+        print letters
+
+    print "ans:", steps
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

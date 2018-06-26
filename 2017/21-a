@@ -1,0 +1,146 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def rotate_90_cw(b):
+    size = len(b)
+    if size == 5:
+        return ''.join([b[3], b[0], b[2], b[4], b[1]])
+    else:
+        #return ''.join([b[4], b[0], b[1], b[3], b[8], b[5], b[2], b[7], b[9], b[10], b[6]])
+        return ''.join([b[8], b[4], b[0], b[3], b[9], b[5], b[1], b[7], b[10], b[6], b[2]])
+
+def flip(b):
+    size = len(b)
+    if size == 5:
+        return ''.join([b[1], b[0], b[2], b[4], b[3]])
+    else:
+        return ''.join([b[2], b[1], b[0], b[3], b[6], b[5], b[4], b[7], b[10], b[9], b[8]])
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    rules = {}
+    for line in input:
+        line = line.strip().split(" => ")
+        #print line
+
+        #print "Adding:"
+        
+        rules[line[0]] = line[1]
+        #print line[0].replace('/', '\n')
+        #print
+        for i in xrange(3):
+            line[0] = rotate_90_cw(line[0])
+            if line[0] in rules:
+                continue
+            rules[line[0]] = line[1]
+            #print line[0].replace('/', '\n')
+            #print
+        #print "=>"
+        #print line[1].replace('/', '\n')
+        #print
+
+        line[0] = flip(line[0])
+        if line[0] in rules:
+            continue
+        rules[line[0]] = line[1]
+        #print line[0].replace('/', '\n')
+        #print
+        for i in xrange(3):
+            line[0] = rotate_90_cw(line[0])
+            if line[0] in rules:
+                continue
+            rules[line[0]] = line[1]
+            #print line[0].replace('/', '\n')
+            #print
+        #print "=>"
+        #print line[1].replace('/', '\n')
+        #print
+
+        #print
+
+    print "num rules:", len(rules)
+    for rule in rules:
+        print rule, "=>", rules[rule]
+    print
+
+    image = ['.#.', '..#', '###']
+    for i in xrange(5):
+        print
+        size = len(image[0])
+        print "size:", size
+        for line in image:
+            print line
+
+        if size % 2 == 0:
+            step = 2
+        else:
+            step = 3
+        print "Step:", step
+
+        x, y = 0, 0
+        v = 0
+        new_image = []
+        while True:
+            print "x, y:", x, y
+            block = image[y][x:x + step]
+            for j in xrange(1, step):
+                block += '/' + image[y + j][x:x + step]
+            print "block:", block
+            replacement = rules[block].split('/')
+            print "replacement:", replacement
+            if x == 0:
+                for k in xrange(step + 1):
+                    new_image.append(replacement[k])
+            else:
+                for k in xrange(step + 1):
+                    new_image[v + k] += replacement[k]
+            for line in new_image:
+                print line
+            x += step
+            if x >= size:
+                x = 0
+                y += step
+                if y >= size:
+                    break
+                v += step + 1
+        image = new_image
+
+    print
+    size = len(image[0])
+    print "size:", size
+    for line in image:
+        print line
+
+            
+    print "ans:", ''.join(image).count('#')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,110 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+OP_SET = 'set'
+OP_SUB = 'sub'
+OP_MUL = 'mul'
+OP_JNZ = 'jnz'
+
+REG_IP = 'ip'
+REG_A = 'a'
+REG_B = 'b'
+REG_C = 'c'
+REG_D = 'd'
+REG_E = 'e'
+REG_F = 'f'
+REG_G = 'g'
+REG_H = 'h'
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    machine = {}
+    machine[REG_A] = 0
+    machine[REG_B] = 0
+    machine[REG_C] = 0
+    machine[REG_D] = 0
+    machine[REG_E] = 0
+    machine[REG_F] = 0
+    machine[REG_G] = 0
+    machine[REG_H] = 0
+
+    insts = []
+    for line in input:
+        line = line.strip().split()
+        if line[0] not in [OP_SET, OP_SUB, OP_MUL, OP_JNZ]:
+            print "Error: Unrecognised instruction '%s'" % line[0]
+            sys.exit(1)
+        try:
+            line[1] = int(line[1])
+            machine[line[1]] = line[1]
+        except ValueError:
+            pass
+        try:
+            line[2] = int(line[2])
+            machine[line[2]] = line[2]
+        except ValueError:
+            pass
+        if line[0] in [OP_SET, OP_SUB, OP_MUL] and isinstance(line[1], int):
+            print "Error: '%s' expected register, got '%s'" % (line[0], line[1])
+            sys.ext(1)
+        #print line
+        insts.append(tuple(line))
+    #print insts
+    num_insts = len(insts)
+    #print "num insts:", num_insts
+    #print machine
+    #print
+
+    machine[REG_IP] = 0
+    print "                        ip: %2d   a: %8d   b: %8d   c: %8d   d: %8d   e: %8d   f: %8d   g: %8d   h: %8d" % (machine[REG_IP], machine[REG_A], machine[REG_B], machine[REG_C], machine[REG_D], machine[REG_E], machine[REG_F], machine[REG_G], machine[REG_H])
+    while machine[REG_IP] >= 0 and machine[REG_IP] < num_insts:
+        if machine[REG_IP] == 11:
+            print "                        ip: %2d   a: %8d   b: %8d   c: %8d   d: %8d   e: %8d   f: %8d   g: %8d   h: %8d" % (machine[REG_IP], machine[REG_A], machine[REG_B], machine[REG_C], machine[REG_D], machine[REG_E], machine[REG_F], machine[REG_G], machine[REG_H])
+        inst = insts[machine[REG_IP]]
+        #print "%d: %s" % (machine[REG_IP], inst)
+        if inst[0] == OP_SET:
+            machine[inst[1]] = machine[inst[2]]
+        elif inst[0] == OP_SUB:
+            machine[inst[1]] -= machine[inst[2]]
+        elif inst[0] == OP_MUL:
+            machine[inst[1]] *= machine[inst[2]]
+        elif inst[0] == OP_JNZ:
+            if machine[inst[1]] != 0:
+                machine[REG_IP] += machine[inst[2]]
+                continue
+        machine[REG_IP] += 1
+        #print "                        ip: %2d   a: %8d   b: %8d   c: %8d   d: %8d   e: %8d   f: %8d   g: %8d   h: %8d" % (machine[REG_IP], machine[REG_A], machine[REG_B], machine[REG_C], machine[REG_D], machine[REG_E], machine[REG_F], machine[REG_G], machine[REG_H])
+
+        print "                        ip: %2d   a: %8d   b: %8d   c: %8d   d: %8d   e: %8d   f: %8d   g: %8d   h: %8d" % (machine[REG_IP], machine[REG_A], machine[REG_B], machine[REG_C], machine[REG_D], machine[REG_E], machine[REG_F], machine[REG_G], machine[REG_H])
+    print "ans:", machine['h']
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

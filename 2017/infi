@@ -1,0 +1,116 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+class robot:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+    def __repr__(self):
+        s = "{"
+        s += str(self.x)
+        s += ","
+        s += str(self.y)
+        s += "}"
+        return s
+
+    def __eq__(self, other):
+        #print "self:", self.__dict__
+        #print "othe:", other.__dict__
+        return self.__dict__ == other.__dict__
+
+    def move(self, dx, dy):
+        oldx = self.x
+        oldy = self.y
+        self.x += dx
+        self.y += dy
+        #print "(%d,%d) + (%d,%d) = (%d,%d)" % (oldx, oldy, dx, dy, self.x, self.y)
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    line = input.readline().strip()
+    line_len = len(line)
+
+    robots = map(lambda r: robot(*map(int, r)), re.findall("\[(-?\d+),(-?\d+)\]", line))
+    num_robots = len(robots)
+    #print "num robots:", num_robots
+    #print robots
+    moves = map(lambda m: map(int, m), re.findall("\((-?\d+),(-?\d+)\)", line))
+    moves = list(zip(*[iter(moves)] * num_robots))
+    #for i in xrange(len(moves)):
+        #print format(i, "3d") + ":", moves[i]
+
+    minxy = reduce(lambda a, e: map(min, zip(a, e)), [[r.x, r.y] for r in robots])
+    maxxy = reduce(lambda a, e: map(max, zip(a, e)), [[r.x, r.y] for r in robots])
+    conflicts = []
+    num_conflicts = 0
+    for move in moves:
+        #print
+        #print move
+        [o[0].move(*o[1]) for o in zip(robots, move)]
+        for i in xrange(num_robots - 1):
+            #print "i:", i
+            for j in xrange(i + 1, num_robots):
+                #print "j:", j
+                if robots[i] == robots[j]:
+                    num_conflicts += 1
+                    #print "CONFLICT", num_conflicts
+                    conflicts.append([robots[i].x, robots[i].y])
+                    minxy[0] = min(minxy[0], robots[i].x)
+                    minxy[1] = min(minxy[1], robots[i].y)
+                    maxxy[0] = max(maxxy[0], robots[i].x)
+                    maxxy[1] = max(maxxy[1], robots[i].y)
+
+    #conflicts.sort(key=lambda e: e[0])
+    #conflicts.sort(key=lambda e: e[1])
+    conflicts.sort(key=lambda e: [e[1], e[0]])
+    lines = []
+    line = None
+    last_c = [minxy[0], maxxy[1] + 1]
+    for c in conflicts:
+        if c[1] != last_c[1]:
+            if line is not None:
+                lines.append(line)
+            line = [' '] * (maxxy[0] + 1)
+            last_c = c
+        line[c[0]] = '#'
+    lines.append(line)
+
+    for l in lines:
+        print "|" + ''.join(l) + "|"
+
+    print
+    print "ans:", num_conflicts
+    #print "conflicts:", conflicts
+    print "min:", minxy, "max:", maxxy
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

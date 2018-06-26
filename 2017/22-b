@@ -1,0 +1,175 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+UP = 0
+RIGHT = 1
+DOWN = 2
+LEFT = 3
+
+CLEAN = '.'
+VCLEAN = 'o'
+WEAKENED = 'w'
+VWEAKENED = 'W'
+INFECTED = '#'
+VINFECTED = '@'
+FLAGGED = 'f'
+VFLAGGED = 'F'
+
+def display_grid(g, v):
+    xlo = g['x_low']
+    xhi = g['x_high']
+    yhi = g['y_high']
+    ylo = g['y_low']
+
+    x = xlo
+    y = yhi
+    print "Grid extent: (%d,%d) to (%d,%d)" % (xlo, yhi, xhi, ylo)
+    while y >= g['y_low']:
+        s = ""
+        while x <= g['x_high']:
+            if (x,y) == v:
+                if (x,y) not in g or g[(x,y)] == CLEAN:
+                    s += VCLEAN
+                elif g[(x,y)] == WEAKENED:
+                    s += VWEAKENED
+                elif g[(x,y)] == INFECTED:
+                    s += VINFECTED
+                else:
+                    s += VFLAGGED
+            else:
+                if (x,y) not in g:
+                    s += CLEAN
+                else:
+                    s += g[(x,y)]
+            x += 1
+        print s
+        x = xlo
+        y -= 1
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    grid = {}
+
+    line = [x for x in input.readline().strip()]
+    starting_grid_size = len(line)
+    x = -((starting_grid_size - 1) / 2)
+    y = (starting_grid_size - 1) / 2
+    grid['x_low'] = x
+    grid['y_high'] = y
+    for node in line:
+        grid[(x,y)] = node
+        #print grid
+        x += 1
+    for line in input:
+        x = -((starting_grid_size - 1) / 2)
+        y -= 1
+        for node in line.strip():
+            grid[(x,y)] = node
+            #print grid
+            x += 1
+    grid['x_high'] = x - 1
+    grid['y_low'] = y
+
+    #display_grid(grid, None)
+    #print
+
+    x,y = 0,0
+    direc = UP
+    acts = 0
+    infects = 0
+    display_grid(grid, (x,y))
+    print "virus@(%d,%d) facing %d" % (x,y, direc)
+    print "acts:", acts, "infects:", infects
+    print
+    while acts < 10000000:
+        if grid[(x,y)] == CLEAN:
+            direc = (direc - 1) % 4
+            #print "-= virus rotates left to face", direc
+            grid[(x,y)] = WEAKENED
+            #print "-= WEAKENS"
+        elif grid[(x,y)] == WEAKENED:
+            #print "-= virus does not rotate"
+            grid[(x,y)] = INFECTED
+            #print "-= INFECTS"
+            infects += 1
+        elif grid[(x,y)] == INFECTED:
+            direc = (direc + 1) % 4
+            #print "-= virus rotates right to face", direc
+            grid[(x,y)] = FLAGGED
+            #print "-= FLAGS"
+        else:
+            # Reverses or rotates 180 degress??
+            # Currently rotating 180
+            direc = (direc + 2) % 4
+            #print "-= virus rotates to face", direc
+            grid[(x,y)] = CLEAN
+            #print "-= CLEANS"
+
+        if direc == UP:
+            y += 1
+            #print "-= moves up"
+            if y > grid['y_high']:
+                grid['y_high'] = y
+                #print "-= NEW y_high"
+        elif direc == DOWN:
+            y -= 1
+            #print "-= moves down"
+            if y < grid['y_low']:
+                grid['y_low'] = y
+                #print "-= NEW y_low"
+        elif direc == RIGHT:
+            x += 1
+            #print "-= moves right"
+            if x > grid['x_high']:
+                grid['x_high'] = x
+                #print "-= NEW x_high"
+        else:
+            x -= 1
+            #print "-= moves left"
+            if x < grid['x_low']:
+                grid['x_low'] = x
+                #print "-= NEW x_low"
+        # Expand the sparse storage
+        if (x,y) not in grid:
+            grid[(x,y)] = CLEAN
+        acts += 1
+        #display_grid(grid, (x,y))
+        #print "virus@(%d,%d) facing %d" % (x,y, direc)
+        #print "acts:", acts, "infects:", infects
+        #print
+
+    display_grid(grid, (x,y))
+    print "virus@(%d,%d) facing %d" % (x,y, direc)
+    print "acts:", acts, "infects:", infects
+    print
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,160 @@
+#!/usr/bin/python
+
+PROBLEM_NUMBER = "20-b"
+
+import sys
+import os
+import argparse
+from libstu import *
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = PROBLEM_NUMBER + "-input"
+
+x = 0
+y = 1
+z = 2
+
+class particle:
+    def __init__(self, num, pos, vel, acc):
+        self.num = num
+        self.posv = pos
+        self.velv = vel
+        self.accv = acc
+
+    def __repr__(self):
+        s = "{"
+        s += " [" + str(self.num) + "]"
+        s += " posv" + str(self.posv)
+        s += " velv" + str(self.velv)
+        s += " accv" + str(self.accv)
+        s += " }"
+        return s
+
+    def move(self):
+        self.velv[x] += self.accv[x]
+        self.velv[y] += self.accv[y]
+        self.velv[z] += self.accv[z]
+        self.posv[x] += self.velv[x]
+        self.posv[y] += self.velv[y]
+        self.posv[z] += self.velv[z]
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    particles = []
+    i = 0
+    for line in input:
+        line = line.strip()
+        line = re.split('[pav]=<([^,]+,[^,]+,[^,]+)>', line)[1::2]
+        line = [map(int, e.split(',')) for e in line]
+        #print line
+        particles.append(particle(i, line[0], line[1], line[2]))
+        #print particles[i]
+        i += 1
+
+    num_particles = len(particles)
+    print "Num particles:", num_particles
+    for p in particles:
+        print p
+    print
+
+    idists = {}
+    print "Initialising interparticle distances"
+    i = 0
+    collided = []
+    while i < num_particles - 1:
+        j = i + 1
+        while j < num_particles:
+            tup = sorted([particles[i].num, particles[j].num])
+            idist = (abs(particles[i].posv[x] - particles[j].posv[x]) +
+                        abs(particles[i].posv[y] - particles[j].posv[y]) +
+                        abs(particles[i].posv[z] - particles[j].posv[z]))
+            if idist == 0:
+                collided += tup
+            else:
+                idists[tuple(tup)] = idist
+            j += 1
+        i += 1
+    if len(collided):
+        collided = sorted(set(collided))
+        print "Killing particles:", collided
+        for i in collided:
+            for j in xrange(num_particles):
+                if particles[j].num == i:
+                    del particles[j]
+                    num_particles -= 1
+                    break
+    print
+
+    while num_particles > 1:
+        print "Num particles:", num_particles
+        for p in particles:
+            print p
+
+        for p in particles:
+            p.move()
+
+        print "Calculating interparticle distances"
+        i = 0
+        collided = []
+        nearing = False
+        while i < num_particles - 1:
+            j = i + 1
+            while j < num_particles:
+                tup = sorted([particles[i].num, particles[j].num])
+                idist = (abs(particles[i].posv[x] - particles[j].posv[x]) +
+                            abs(particles[i].posv[y] - particles[j].posv[y]) +
+                            abs(particles[i].posv[z] - particles[j].posv[z]))
+                if idist == 0:
+                    collided += tup
+                else:
+                    tup = tuple(tup)
+                    if idist < idists[tup]:
+                        nearing = True
+                    idists[tup] = idist
+                j += 1
+            i += 1
+        if len(collided):
+            collided = sorted(set(collided))
+            print "Killing particles:", collided
+            for i in collided:
+                for j in xrange(num_particles):
+                    if particles[j].num == i:
+                        del particles[j]
+                        num_particles -= 1
+                        break
+
+        if not nearing:
+            break
+
+        print
+
+    print "Num particles:", num_particles
+    for p in particles:
+        print p
+
+    print "ans:", num_particles
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
