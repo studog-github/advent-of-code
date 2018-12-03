@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+import string
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    exactly_twice = 0
+    exactly_thrice = 0
+
+    for line in input:
+        count = 0
+        found_twice = False
+        found_thrice = False
+        for letter in string.ascii_lowercase:
+            count = line.count(letter)
+            if count == 2:
+                found_twice = True
+                if found_thrice:
+                    break
+            elif count == 3:
+                found_thrice = True
+                if found_twice:
+                    break
+        if found_twice:
+            exactly_twice += 1
+        if found_thrice:
+            exactly_thrice += 1
+
+    checksum = exactly_twice * exactly_thrice
+
+    print("checksum %d" % checksum)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
