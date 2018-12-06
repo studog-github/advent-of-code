@@ -30,10 +30,13 @@ def main():
 
     # Main loop
 
+    lines = []
+
     exactly_twice = 0
     exactly_thrice = 0
 
     for line in input:
+        lines.append(line.strip())
         count = 0
         found_twice = False
         found_thrice = False
@@ -55,6 +58,23 @@ def main():
     checksum = exactly_twice * exactly_thrice
 
     print("checksum %d" % checksum)
+
+    lines.sort()
+    for i in xrange(0, len(lines) - 1):
+        l1 = lines[i]
+        l2 = lines[i + 1]
+        diff_found = None
+        for j in xrange(0, len(l1)):
+            if l1[j] != l2[j]:
+                if diff_found is not None:
+                    diff_found = None
+                    break
+                diff_found = j
+        if diff_found is not None:
+            print("id 1: %s" % l1)
+            print("id 2: %s" % l2)
+            print("common letters: %s" % (l1[:diff_found] + l1[diff_found +1:]))
+            break
 
     return 0
 

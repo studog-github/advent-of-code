@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    fabric = {}
+    claims = []
+
+    for line in input:
+        line.strip()
+        (claim_id, _, margin, area) = line.split()
+        claim_id = int(claim_id.split('#')[1])
+        claims.append(claim_id)
+        margin = map(int, margin.split(':')[0].split(','))
+        area = map(int, area.split('x'))
+        for y in xrange(margin[1], margin[1] + area[1]):
+            for x in xrange(margin[0], margin[0] + area[0]):
+                if (x, y) not in fabric:
+                    fabric[(x, y)] = [ claim_id ]
+                else:
+                    fabric[(x, y)].append(claim_id)
+
+    overlaps = 0
+    for xy in sorted(fabric.keys()):
+        if len(fabric[xy]) > 1:
+            overlaps += 1
+            for claim in fabric[xy]:
+                if claim in claims:
+                    claims.remove(claim)
+    print("overlaps: %s" % overlaps)
+    print("claims: %s" % claims)
+
+    
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

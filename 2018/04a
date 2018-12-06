@@ -1,0 +1,74 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+from datetime import datetime
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    guards = {}
+
+    for line in input:
+        (timestamp, action) = line.strip().split(']')
+        timestamp = timestamp.split('[')[1]
+        action = action.strip()
+        #print("|%s| |%s|" % (timestamp, action))
+        if action[:5] == "Guard":
+            guard_id = int(action.split('#')[1].split()[0])
+            if guard_id not in guards:
+                guards[guard_id] = [0, [0] * 60]
+        elif action[:5] == "falls":
+            sleep_start = datetime.strptime(timestamp, "%Y-%m-%d %H:%M")
+        elif action[:5] == "wakes":
+            sleep_end = datetime.strptime(timestamp, "%Y-%m-%d %H:%M")
+            guards[guard_id][0] += sleep_end.minute - sleep_start.minute
+            for i in xrange(sleep_start.minute, sleep_end.minute):
+                guards[guard_id][1][i] += 1
+    #print(guards)
+
+    sleepiest = sorted(guards.items(), key=lambda x: x[1][0])[-1]
+    #print(sleepiest)
+    max_slept = max(sleepiest[1][1])
+    max_minute = sleepiest[1][1].index(max_slept)
+    print("%s x %s = %s" % (sleepiest[0], max_minute, sleepiest[0] * max_minute))
+
+    max_freq_sleep = 0
+    for guard in guards.keys():
+        #print("%s: %s" % (guard, guards[guard]))
+        freq_sleep = max(guards[guard][1])
+        #print("max:%s" % freq_sleep)
+        if freq_sleep > max_freq_sleep:
+            max_freq_sleep = freq_sleep
+            max_freq_minute = guards[guard][1].index(freq_sleep)
+            max_freq_guard = guard
+    print("%s x %s = %s" % (max_freq_guard, max_freq_minute, max_freq_guard * max_freq_minute))
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
