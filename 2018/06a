@@ -28,11 +28,34 @@ def main():
 
     # Main loop
 
-    coords = []
+    X = 0
+    Y = 1
 
+    coords = []
+    top_left = []
+    bottom_right = []
+
+    coord = map(int, input.readline().strip().split(','))
+    coords.append(coord)
+    top_left = list(coord)
+    bottom_right = list(coord)
     for line in input:
-        coords.append(line.strip().split(','))
+        coord = map(int, line.strip().split(','))
+        coords.append(coord)
+        if coord[X] < top_left[X]:
+            top_left[X] = coord[X]
+        elif coord[X] > bottom_right[X]:
+            bottom_right[X] = coord[X]
+        if coord[Y] < top_left[Y]:
+            top_left[Y] = coord[Y]
+        elif coord[Y] > bottom_right[Y]:
+            bottom_right[Y] = coord[Y]
     print coords
+
+    # Loop over coords
+    num_coords = len(coords)
+    while True:
+        pass
 
     return 0
 
