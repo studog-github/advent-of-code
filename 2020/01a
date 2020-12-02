@@ -1,0 +1,53 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    line_items = [int(line) for line in input]
+    line_items.sort()
+    print(line_items)
+
+    small = 0
+    large = len(line_items) - 1
+    while True:
+        total = line_items[small] + line_items[large]
+        if total == 2020:
+            product = line_items[small] * line_items[large]
+            print(f"{line_items[small]} + {line_items[large]} = {total}")
+            print(f"{line_items[small]} * {line_items[large]} = {product}")
+            break
+        elif total < 2020:
+            small = small + 1
+        elif total > 2020:
+            large = large - 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
