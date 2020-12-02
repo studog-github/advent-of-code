@@ -1,0 +1,55 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    total_fuel = 0
+    total_fuel_2 = 0
+    for line in input:
+        sub_total_fuel_2 = 0
+        mass = int(line)
+        fuel = (mass / 3) - 2
+        if (fuel < 0):
+            fuel = 0
+        total_fuel += fuel
+        sub_total_fuel_2 += fuel
+        sys.stdout.write("%d: %d" % (mass, fuel))
+        while fuel > 0:
+            mass = fuel
+            fuel = (mass / 3) - 2
+            if (fuel < 0):
+                break
+            sys.stdout.write(" + %d" % (fuel))
+            sub_total_fuel_2 += fuel
+        total_fuel_2 += sub_total_fuel_2
+        print(" = %d -- sub_tot: %d sub_tot_2: %d" % (sub_total_fuel_2, total_fuel, total_fuel_2))
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

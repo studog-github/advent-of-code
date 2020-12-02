@@ -1,0 +1,92 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+class computer:
+    # Machine operations
+    def addition(self):
+        r1 = self.program[self.ip + 1]
+        r2 = self.program[self.ip + 2]
+        s1 = self.program[self.ip + 3]
+        self.program[s1] = self.program[r1] + self.program[r2]
+        self.ip += 4
+
+    def multiplication(self):
+        r1 = self.program[self.ip + 1]
+        r2 = self.program[self.ip + 2]
+        s1 = self.program[self.ip + 3]
+        self.program[s1] = self.program[r1] * self.program[r2]
+        self.ip += 4
+        
+    opcodes = {
+        1: addition,
+        2: multiplication,
+        99: None,
+    }
+
+    # Regular members and methods
+    def __init__(self, program):
+        self.original_program = program
+
+    def reset(self, noun, verb):
+        self.program = list(self.original_program)
+        self.program[1] = noun
+        self.program[2] = verb
+        self.ip = 0
+
+    def run(self):
+        while True:
+            #print "program %s" % self.program
+            p_opcode = self.program[self.ip]
+            if p_opcode not in computer.opcodes:
+                print "ERROR: Unknown opcode %d at index %d, halted" % (p_opcode, self.ip)
+                return
+            elif computer.opcodes[p_opcode] is None:
+                return
+            computer.opcodes[p_opcode](self)
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    comp = computer( [ int(x) for x in input.readline().rstrip().split(',') ] )
+    # Part A
+    comp.reset(12, 2)
+    comp.run()
+    print "Program output: %d" % comp.program[0]
+    # Part B
+    for noun in xrange(0, 99):
+        for verb in xrange(0, 99):
+            sys.stdout.write("\r%02d %02d" % (noun, verb))
+            comp.reset(noun, verb)
+            comp.run()
+            if comp.program[0] == 19690720:
+                print " - %d" % (100 * noun + verb)
+                return
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

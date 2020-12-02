@@ -1,0 +1,63 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def valid_pw(i):
+    str_i = str(i)
+    if len(str_i) != 6:
+        #print " not 6 digits"
+        return False
+    double_found = False
+    for j in xrange(0, 5):
+        if str_i[j + 1] < str_i[j]:
+            #print " not monotonically increasing"
+            return False
+        if str_i[j + 1] == str_i[j]:
+            if ((j - 1 < 0 or str_i[j - 1] != str_i[j]) and
+                (j + 2 > 5 or str_i[j + 2] != str_i[j])):
+                double_found = True
+    #if not double_found:
+        #print " no double"
+    #else:
+        #print " VALID"
+    return double_found
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    (start, end) = map(int, input.readline().rstrip().split('-'))
+
+    num_valid_pws = 0
+    for i in xrange(start, end + 1):
+        #sys.stdout.write("Checking %d..." % i)
+        if valid_pw(i):
+            num_valid_pws += 1
+    print "Number of valid passwords: ", num_valid_pws
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

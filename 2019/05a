@@ -1,0 +1,177 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+class computer:
+    # Machine operations
+    def addition(self, mode):
+        num_instns = 4
+        mode += '0' * (num_instns - len(mode))
+        r1 = self.program[self.ip + 1]
+        if mode[0] == '0':
+            r1 = self.program[r1]
+        r2 = self.program[self.ip + 2]
+        if mode[1] == '0':
+            r2 = self.program[r2]
+        s1 = self.program[self.ip + 3]
+        self.program[s1] = r1 + r2
+        self.ip += num_instns
+
+    def multiplication(self, mode):
+        num_instns = 4
+        mode += '0' * (num_instns - len(mode))
+        r1 = self.program[self.ip + 1]
+        if mode[0] == '0':
+            r1 = self.program[r1]
+        r2 = self.program[self.ip + 2]
+        if mode[1] == '0':
+            r2 = self.program[r2]
+        s1 = self.program[self.ip + 3]
+        self.program[s1] = r1 * r2
+        self.ip += num_instns
+
+    def poke(self, mode):
+        num_instns = 2
+        mode += '0' * (num_instns - len(mode))
+        r1 = int(raw_input("poke needs a number: "))
+        s1 = self.program[self.ip + 1]
+        self.program[s1] = r1
+        self.ip += num_instns
+        
+    def peek(self, mode):
+        num_instns = 2
+        mode += '0' * (num_instns - len(mode))
+        r1 = self.program[self.ip + 1]
+        if mode[0] == '0':
+            r1 = self.program[r1]
+        print("peek: %d" % r1)
+        self.ip += num_instns
+        
+    def jumpiftrue(self, mode):
+        num_instns = 3
+        mode += '0' * (num_instns - len(mode))
+        r1 = self.program[self.ip + 1]
+        if mode[0] == '0':
+            r1 = self.program[r1]
+        r2 = self.program[self.ip + 2]
+        if mode[1] == '0':
+            r2 = self.program[r2]
+        if r1 != 0:
+            self.ip = r2
+        else:
+            self.ip += num_instns
+
+    def jumpiffalse(self, mode):
+        num_instns = 3
+        mode += '0' * (num_instns - len(mode))
+        r1 = self.program[self.ip + 1]
+        if mode[0] == '0':
+            r1 = self.program[r1]
+        r2 = self.program[self.ip + 2]
+        if mode[1] == '0':
+            r2 = self.program[r2]
+        if r1 == 0:
+            self.ip = r2
+        else:
+            self.ip += num_instns
+
+    def lessthan(self, mode):
+        num_instns = 4
+        mode += '0' * (num_instns - len(mode))
+        r1 = self.program[self.ip + 1]
+        if mode[0] == '0':
+            r1 = self.program[r1]
+        r2 = self.program[self.ip + 2]
+        if mode[1] == '0':
+            r2 = self.program[r2]
+        s1 = self.program[self.ip + 3]
+        if r1 < r2:
+            self.program[s1] = 1
+        else:
+            self.program[s1] = 0
+        self.ip += num_instns
+
+    def equals(self, mode):
+        num_instns = 4
+        mode += '0' * (num_instns - len(mode))
+        r1 = self.program[self.ip + 1]
+        if mode[0] == '0':
+            r1 = self.program[r1]
+        r2 = self.program[self.ip + 2]
+        if mode[1] == '0':
+            r2 = self.program[r2]
+        s1 = self.program[self.ip + 3]
+        if r1 == r2:
+            self.program[s1] = 1
+        else:
+            self.program[s1] = 0
+        self.ip += num_instns
+
+    opcodes = {
+        1: addition,
+        2: multiplication,
+        3: poke,
+        4: peek,
+        5: jumpiftrue,
+        6: jumpiffalse,
+        7: lessthan,
+        8: equals,
+        99: None,
+    }
+
+    # Regular members and methods
+    def __init__(self, program):
+        self.original_program = program
+
+    def reset(self):
+        self.program = list(self.original_program)
+        self.ip = 0
+
+    def run(self):
+        while True:
+            #print "program %s" % self.program
+            p_opcode = self.program[self.ip] % 100
+            p_opmode = str(self.program[self.ip])[:-2][::-1]
+            print "ip: %d %s mode: '%s'" % (self.ip, self.program[self.ip:self.ip+4], p_opmode)
+            if p_opcode not in computer.opcodes:
+                print "ERROR: Unknown opcode %d at index %d, halted" % (p_opcode, self.ip)
+                return
+            elif computer.opcodes[p_opcode] is None:
+                return
+            computer.opcodes[p_opcode](self, p_opmode)
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    comp = computer( [ int(x) for x in input.readline().rstrip().split(',') ] )
+    # Part A
+    comp.reset()
+    comp.run()
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

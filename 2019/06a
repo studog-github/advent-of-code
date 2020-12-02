@@ -1,0 +1,97 @@
+#!/usr/bin/python
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+class Tree:
+    # In-tree constants
+    LEVEL = 0
+    PARENT = 1
+    CHILDREN = 2
+
+    def __init__(self, root):
+        self.root = root
+        self.tree = { root: [ 0, None, [] ]  }
+        self.sum = 0
+
+    def __str__(self, name=None):
+        if name is None:
+            name = self.root
+        node = self.tree[name]
+        node_line = node[self.LEVEL] * ' ' + name + ":"
+        child_lines = ""
+        for child_name in node[self.CHILDREN]:
+            node_line += " " + child_name
+            child_lines += "\n" + self.__str__(child_name)
+        return node_line + child_lines
+
+    def add(self, parent, child):
+        if parent not in self.tree:
+            return False
+        new_level = self.tree[parent][self.LEVEL] + 1
+        self.tree[parent][self.CHILDREN].append(child)
+        self.tree[child] = [ new_level, parent, [] ]
+        self.sum += new_level
+        return True
+
+    def transfer_cost(self, a, b):
+        cost = 0
+        a = self.tree[a][self.PARENT]
+        b = self.tree[b][self.PARENT]
+        while self.tree[a][self.LEVEL] > self.tree[b][self.LEVEL]:
+            a = self.tree[a][self.PARENT]
+            cost += 1
+        while self.tree[a][self.LEVEL] < self.tree[b][self.LEVEL]:
+            b = self.tree[b][self.PARENT]
+            cost += 1
+        while a != b:
+            a = self.tree[a][self.PARENT]
+            b = self.tree[b][self.PARENT]
+            cost += 2
+        return cost
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    orbit_map = Tree('COM')
+    unattached = []
+    for line in input:
+        parent, satellite = line.rstrip().split(')')
+        if not orbit_map.add(parent, satellite):
+            unattached.append([parent, satellite])
+    while len(unattached) > 0:
+        print "len %d" % len(unattached)
+        for node in unattached[::-1]:
+            if orbit_map.add(node[0], node[1]):
+               unattached.remove(node)
+
+    print orbit_map
+    print "Sum: %d" % orbit_map.sum
+    print "Transfers: %d" % orbit_map.transfer_cost('YOU', 'SAN')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
