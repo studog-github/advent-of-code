@@ -1,0 +1,97 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+class SledRule:
+    def __init__(self, rule):
+        (self.let_min, self.let_max, self.letter) = rule.replace('-',' ').split(' ')
+        self.let_min = int(self.let_min)
+        self.let_max = int(self.let_max)
+
+    def __repr__(self):
+        return f'SeldRule({self.__str__})'
+
+    def __str__(self):
+        return f'{self.let_min}-{self.let_max} {self.letter}'
+
+    def isValid(self, password):
+        letters = {}
+        for i in range(len(password)):
+            if password[i] not in letters:
+                letters[password[i]] = 1
+            else:
+                letters[password[i]] += 1
+        if ((self.letter not in letters) or (letters[self.letter] < self.let_min) or
+                (letters[self.letter] > self.let_max)):
+            return False
+        return True
+
+class TobogganRule:
+    def __init__(self, rule):
+        (self.pos1, self.pos2, self.letter) = rule.replace('-',' ').split(' ')
+        self.pos1 = int(self.pos1) - 1
+        self.pos2 = int(self.pos2) - 1
+
+    def __repr__(self):
+        return f'TobogganRule({self.__str__})'
+
+    def __str__(self):
+        return f'{self.pso1}-{self.pos2} {self.letter}'
+
+    def isValid(self, password):
+        return ((password[self.pos1] == self.letter) ^ (password[self.pos2] == self.letter))
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    sledValid = 0
+    tobogganValid = 0
+    for line in input:
+        line = line.strip()
+        (rule, password) = line.split(':')
+        password = password.strip()
+        sledRule = SledRule(rule)
+        if sledRule.isValid(password):
+            sledValid += 1
+            print('.', end='')
+        else:
+            print('X', end='')
+        tobogganRule = TobogganRule(rule)
+        if tobogganRule.isValid(password):
+            tobogganValid += 1
+            print('.', end='')
+        else:
+            print('X', end='')
+        print(f' \'{password}\' => \'{rule}\'')
+
+    print(f'Sled Valid: {sledValid}')
+    print(f'Toboggan Valid: {tobogganValid}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
