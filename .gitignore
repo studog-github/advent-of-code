@@ -3,5 +3,8 @@
 # Python
 *.pyc
 
+# Vim
+*.swp
+
 # General
 tags
