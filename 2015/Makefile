@@ -21,4 +21,4 @@ all: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ -lcrypto
 
 clean:
-	-rm $(OBJS)
+	-rm -f $(OBJS)
