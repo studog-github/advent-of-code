@@ -2,7 +2,7 @@ class computer:
     # Machine operations
     def addition(self, mode):
         num_instns = 4
-        mode += '0' * (num_instns - len(mode))
+        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -15,7 +15,7 @@ class computer:
 
     def multiplication(self, mode):
         num_instns = 4
-        mode += '0' * (num_instns - len(mode))
+        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -28,7 +28,7 @@ class computer:
 
     def poke(self, mode):
         num_instns = 2
-        mode += '0' * (num_instns - len(mode))
+        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.poke_input()
         #print("-= poke got %d" % r1)
         s1 = self.program[self.ip + 1]
@@ -37,7 +37,7 @@ class computer:
         
     def peek(self, mode):
         num_instns = 2
-        mode += '0' * (num_instns - len(mode))
+        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -47,7 +47,7 @@ class computer:
         
     def jumpiftrue(self, mode):
         num_instns = 3
-        mode += '0' * (num_instns - len(mode))
+        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -61,7 +61,7 @@ class computer:
 
     def jumpiffalse(self, mode):
         num_instns = 3
-        mode += '0' * (num_instns - len(mode))
+        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -75,7 +75,7 @@ class computer:
 
     def lessthan(self, mode):
         num_instns = 4
-        mode += '0' * (num_instns - len(mode))
+        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -91,7 +91,7 @@ class computer:
 
     def equals(self, mode):
         num_instns = 4
-        mode += '0' * (num_instns - len(mode))
+        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
