@@ -15,7 +15,7 @@ class SledRule:
         self.let_max = int(self.let_max)
 
     def __repr__(self):
-        return f'SeldRule({self.__str__})'
+        return f'SledRule({self.__str__})'
 
     def __str__(self):
         return f'{self.let_min}-{self.let_max} {self.letter}'
