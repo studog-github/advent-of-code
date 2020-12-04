@@ -1,0 +1,137 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+class Passport:
+    def __init__(self):
+        self.pp_fields = {}
+
+    @staticmethod
+    def fourDigitValidate(val, lo, hi):
+        match = re.search(r'^(\d{4})$', val)
+        if match is None:
+            return False
+        ival = int(match.group(1))
+        if ival < lo or ival > hi:
+            return False
+        return True
+
+    @staticmethod
+    def byrValidate(val):
+        return Passport.fourDigitValidate(val, 1920, 2002)
+
+    @staticmethod
+    def iyrValidate(val):
+        return Passport.fourDigitValidate(val, 2010, 2020)
+
+    @staticmethod
+    def eyrValidate(val):
+        return Passport.fourDigitValidate(val, 2020, 2030)
+
+    @staticmethod
+    def hgtValidate(val):
+        match = re.search(r'^(\d+)(cm|in)$', val)
+        if match is None:
+            return False
+        ival = int(match.group(1))
+        uval = match.group(2)
+        if ((uval == 'cm' and (ival < 150 or ival > 193)) or
+            (uval == 'in' and (ival < 59 or ival > 76))):
+            return False
+        return True
+
+    @staticmethod
+    def hclValidate(val):
+        match = re.search(r'^#([0-9a-f]{6})$', val)
+        if match is None:
+            return False
+        return True
+
+    @staticmethod
+    def eclValidate(val):
+        match = re.search(r'^(amb|blu|brn|gry|grn|hzl|oth)$', val)
+        if match is None:
+            return False
+        return True
+
+    @staticmethod
+    def pidValidate(val):
+        match = re.search(r'^(\d{9})$', val)
+        if match is None:
+            return False
+        return True
+
+    @staticmethod
+    def cidValidate(val):
+        return True
+
+    required_fields = {
+        'byr': [ 'Birth Year', byrValidate.__func__ ],
+        'iyr': [ 'Issue Year', iyrValidate.__func__ ],
+        'eyr': [ 'Expiration Year', eyrValidate.__func__ ],
+        'hgt': [ 'Height', hgtValidate.__func__ ],
+        'hcl': [ 'Hair Color', hclValidate.__func__ ],
+        'ecl': [ 'Eye Color', eclValidate.__func__ ],
+        'pid': [ 'Passport ID', pidValidate.__func__ ],
+    }
+
+    optional_fields = {
+        'cid': [ 'Country ID', cidValidate.__func__ ],
+    }
+
+    def addFields(self, fields):
+        for field in fields.split(' '):
+            (field_name, field_value) = field.split(':')
+            self.pp_fields[field_name] = field_value
+
+    def isValid(self):
+        for field in self.required_fields:
+            if (field not in self.pp_fields or
+                     not self.required_fields[field][1](self.pp_fields[field])):
+                return False
+        return True
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    passports = []
+    passports.append(Passport())
+    num_valid = 0
+    for line in input:
+        line = line.strip()
+        if line == '':
+            num_valid += passports[-1].isValid()
+            passports.append(Passport())
+            continue
+        passports[-1].addFields(line)
+    num_valid += passports[-1].isValid()
+    print(f'Found {num_valid} valid passports')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
