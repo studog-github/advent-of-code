@@ -1,0 +1,59 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    any_counts = []
+    every_counts = []
+
+    num_people = 0
+    answers = {}
+    for line in input:
+        line = line.strip()
+        if line == '':
+            any_counts.append(len(answers))
+            every_counts.append(sum([answers[k] == num_people for k in answers]))
+            num_people = 0
+            answers = {}
+            continue
+        num_people += 1
+        for q in list(line):
+            if q not in answers:
+                answers[q] = 1
+            else:
+                answers[q] += 1
+    any_counts.append(len(answers))
+    every_counts.append(sum([answers[k] == num_people for k in answers]))
+    print(f'Sum of any_counts is {sum(any_counts)}')
+    print(f'Sum of every_counts is {sum(every_counts)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
