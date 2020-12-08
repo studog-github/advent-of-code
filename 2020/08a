@@ -1,0 +1,106 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+INS_ACC = 'acc'
+INS_JMP = 'jmp'
+INS_NOP = 'nop'
+
+PROG_OP = 0
+PROG_VAL = 1
+
+def run_program(program):
+    ins_count = [ 0 ] * len(program)
+    accumulator = 0
+    ip = 0
+    while True:
+        if ip >= len(program):
+            return True, accumulator
+        if ins_count[ip] > 0:
+            return False, accumulator
+        ins_count[ip] += 1
+        if program[ip][PROG_OP] == INS_ACC:
+            accumulator += program[ip][PROG_VAL]
+            ip += 1
+        elif program[ip][PROG_OP] == INS_JMP:
+            ip += program[ip][PROG_VAL]
+        elif program[ip][PROG_OP] == INS_NOP:
+            ip += 1
+        else:
+            print(f"Unknown operation '{program[ip]}' at line '{ip}'")
+            return False, None
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    program = []
+    for line in input:
+        (ins, val) = line.split(' ')
+        program.append([ins, int(val)])
+
+    (normal_exit, accumulator) = run_program(program)
+
+    # Part A is looking for the infinite loop (not normal exit)
+    if not normal_exit and accumulator is not None:
+        print(f'A: Accumulator is {accumulator}')
+    else:
+        print(f'A: FAIL exit {normal_exit} acc {accumulator}')
+
+    for i in range(0, len(program)):
+        print(f'-= {i}: ', end='')
+        if program[i][PROG_OP] == INS_ACC:
+            print(f' skipping {INS_ACC}')
+            continue
+        print(f'[{program[i][PROG_OP]} {program[i][PROG_VAL]}] => ', end='')
+        if program[i][PROG_OP] == INS_JMP:
+            program[i][PROG_OP] = INS_NOP
+            print(f'[{program[i][PROG_OP]} {program[i][PROG_VAL]}] => ', end='')
+            (normal_exit, accumulator) = run_program(program)
+            print(f'exit [{normal_exit}] acc [{accumulator}]')
+            if normal_exit:
+                break
+            program[i][PROG_OP] = INS_JMP
+        elif program[i][PROG_OP] == INS_NOP and program[i][PROG_VAL] == 0:
+            print(f' skipping 0 jmp infinite loop')
+        elif program[i][PROG_OP] == INS_NOP and program[i][PROG_VAL] != 0:
+            program[i][PROG_OP] = INS_JMP
+            print(f'[{program[i][PROG_OP]} {program[i][PROG_VAL]}] => ', end='')
+            (normal_exit, accumulator) = run_program(program)
+            print(f'exit [{normal_exit}] acc [{accumulator}]')
+            if normal_exit:
+                break
+            program[i][PROG_OP] = INS_NOP
+
+    # Part B is looking for normal exit
+    if normal_exit and accumulator is not None:
+        print(f'B: Accumulator is {accumulator}')
+    else:
+        print(f'B: FAIL exit {normal_exit} acc {accumulator}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
