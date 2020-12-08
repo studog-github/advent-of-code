@@ -1,0 +1,96 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    bags_contain = {}
+    contained_by = {}
+    for line in input:
+        line = line.strip()
+        match = re.search(r'^(\w+ \w+) bags contain (no other bags|.*).', line)
+        if match is None:
+            print(f"matching failed on 'line'")
+            return 1
+        colour = match[1]
+        contain = match[2]
+        #print(f'[{colour}] => [{contain}]')
+        if contain == 'no other bags':
+            bags_contain[colour] = {}
+        else:
+            # Parse contain-ables
+            bags_contain[colour] = {}
+            for i in contain.split(','):
+                match = re.search(r'(\d+) (\w+ \w+) bag', i)
+                num_bags = int(match[1])
+                sub_colour = match[2]
+                bags_contain[colour][sub_colour] = num_bags
+                if sub_colour not in contained_by:
+                    contained_by[sub_colour] = { colour: 1 }
+                elif colour not in contained_by[sub_colour]:
+                    contained_by[sub_colour][colour] = 1
+
+    print(bags_contain)
+    print()
+    print(contained_by)
+
+    start_target = 'shiny gold'
+    node_queue = []
+    colours_containing = {}
+    target = start_target
+    while True:
+        if target in contained_by:
+            for colour in contained_by[target]:
+                if colour not in colours_containing and colour not in node_queue:
+                    node_queue.append(colour)
+        if len(node_queue) == 0:
+            break
+        target = node_queue.pop(0)
+        colours_containing[target] = 1
+
+    print()
+    print(f'{colours_containing}')
+    print()
+    print(f"Bag '{start_target}' can be contained by {len(colours_containing)} bags")
+
+    def count_bags(colour):
+        num_bags = 0
+        for sub_colour in bags_contain[colour]:
+            sub_num = bags_contain[colour][sub_colour]
+            num_bags += sub_num + sub_num * count_bags(sub_colour)
+        return num_bags
+
+    num_contained = count_bags(start_target)
+    print()
+    print(f"Bag '{start_target}' contains {num_contained} bags")
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
