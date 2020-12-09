@@ -1,0 +1,83 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    arg_parser.add_argument("-p", "--preamble", default=25,
+                            help="specify the XMAS preamble size (default: %(default)s)",
+                            metavar="preamble")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    preamble_size = int(args.preamble)
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    def find_sum(window, target):
+        sorted_window = sorted(window)
+        lo = 0
+        hi = len(sorted_window) - 1
+        while lo < hi:
+            total = sorted_window[lo] + sorted_window[hi]
+            if total == target:
+                return (True, sorted_window[lo], sorted_window[hi])
+            elif total > target:
+                hi -= 1
+            elif total < target:
+                lo += 1
+        return (False, 0, 0)
+
+    full_list = []
+    sliding_window = []
+    for i in range(0, preamble_size):
+        line = input.readline().strip()
+        new_int = int(line)
+        #new_int = int(input.readline().strip())
+        full_list.append(new_int)
+        sliding_window.append(new_int)
+    for line in input:
+        new_int = int(line.strip())
+        full_list.append(new_int)
+        (found, a, b) = find_sum(sliding_window, new_int)
+        if not found:
+            print(f'The first non-valid number is {new_int}')
+            break
+        else:
+            sliding_window.pop(0)
+            sliding_window.append(new_int)
+    if found:
+        print(f'All XMAS numbers valid')
+    else:
+        for i in range(0, len(full_list) - 1):
+            for j in range(i + 2, len(full_list)):
+                if sum(full_list[i:j]) == new_int:
+                    answer = min(full_list[i:j]) + max(full_list[i:j])
+                    print(f'Cont {full_list[i:j]} min + max = {answer}')
+                    return 0
+        print(f'No contiguous block found!!')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
