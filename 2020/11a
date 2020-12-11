@@ -1,0 +1,145 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from pprint import pprint
+import copy
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    FLOOR = '.'
+    SEAT_EMPTY = 'L'
+    SEAT_OCCUP = '#'
+
+    def print_seats(seats):
+        for i in seats:
+            print(''.join(i))
+
+    def adj_occup(seats, y, x):
+        ym1 = y - 1
+        yp1 = y + 1
+        xm1 = x - 1
+        xp1 = x + 1
+        ym1_inbounds = True if ym1 >= 0 else False
+        yp1_inbounds = True if yp1 < len(seats) else False
+        xm1_inbounds = True if xm1 >= 0 else False
+        xp1_inbounds = True if xp1 < len(seats[y]) else False
+        total = 0
+        if ym1_inbounds and xm1_inbounds and seats[ym1][xm1] == SEAT_OCCUP:
+            total += 1
+        if ym1_inbounds and                  seats[ym1][x  ] == SEAT_OCCUP:
+            total += 1
+        if ym1_inbounds and xp1_inbounds and seats[ym1][xp1] == SEAT_OCCUP:
+            total += 1
+        if                  xm1_inbounds and seats[y  ][xm1] == SEAT_OCCUP:
+            total += 1
+
+
+        if                  xp1_inbounds and seats[y  ][xp1] == SEAT_OCCUP:
+            total += 1
+        if yp1_inbounds and xm1_inbounds and seats[yp1][xm1] == SEAT_OCCUP:
+            total += 1
+        if yp1_inbounds and                  seats[yp1][x  ] == SEAT_OCCUP:
+            total += 1
+        if yp1_inbounds and xp1_inbounds and seats[yp1][xp1] == SEAT_OCCUP:
+            total += 1
+        return total
+
+    def vis_occup(seats, y, x):
+        total = 0
+        deltas = ((-1, -1), (-1, 0), (-1, 1),
+                  (0, -1),           (0, 1),
+                  (1, -1), (1, 0), (1, 1))
+        for delta in deltas:
+            yn, xn = y, x
+            while True:
+                yn += delta[0]
+                xn += delta[1]
+                if ((yn < 0 or yn >= len(seats)) or (xn < 0 or xn >= len(seats[y])) or
+                            (seats[yn][xn] == SEAT_EMPTY)):
+                    break
+                elif seats[yn][xn] == SEAT_OCCUP:
+                    total += 1
+                    break
+        return total
+
+    def num_occup(seats):
+        total = 0
+        for row in seats:
+            for col in row:
+                if col == SEAT_OCCUP:
+                    total += 1
+        return total
+
+    orig_seats = [list(l.strip()) for l in input.readlines()]
+
+    seats = copy.deepcopy(orig_seats)
+    new_seats = copy.deepcopy(orig_seats)
+    #print_seats(new_seats)
+    #print()
+    while True:
+        for y in range(0, len(seats)):
+            for x in range(0, len(seats[y])):
+                if seats[y][x] == FLOOR:
+                    continue
+                neighbours = adj_occup(seats, y, x)
+                if seats[y][x] == SEAT_EMPTY and neighbours == 0:
+                    new_seats[y][x] = SEAT_OCCUP
+                elif seats[y][x] == SEAT_OCCUP and neighbours >= 4:
+                    new_seats[y][x] = SEAT_EMPTY
+        if new_seats == seats:
+            break
+        #print_seats(new_seats)
+        #print()
+        seats = copy.deepcopy(new_seats)
+    print(f'A: Num occupied: {num_occup(new_seats)}')
+
+    seats = copy.deepcopy(orig_seats)
+    new_seats = copy.deepcopy(orig_seats)
+    #print_seats(new_seats)
+    #print()
+    while True:
+        for y in range(0, len(seats)):
+            for x in range(0, len(seats[y])):
+                if seats[y][x] == FLOOR:
+                    continue
+                neighbours = vis_occup(seats, y, x)
+                if seats[y][x] == SEAT_EMPTY and neighbours == 0:
+                    new_seats[y][x] = SEAT_OCCUP
+                elif seats[y][x] == SEAT_OCCUP and neighbours >= 5:
+                    new_seats[y][x] = SEAT_EMPTY
+        if new_seats == seats:
+            break
+        #print_seats(new_seats)
+        #print()
+        seats = copy.deepcopy(new_seats)
+    print(f'B: Num occupied: {num_occup(new_seats)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
