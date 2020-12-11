@@ -1,0 +1,70 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from pprint import pprint
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    JOLTAGE = 0
+    OPTIONS = 1
+
+    differences = {}
+    adaptors = [[int(i), 0] for i in input.read().splitlines()]
+    adaptors.sort()
+    adaptors.insert(0, [0, 0])
+    adaptors.append([adaptors[-1][JOLTAGE] + 3, 0])
+    print(adaptors)
+    for i in range(0, len(adaptors) - 1):
+        diff = adaptors[i + 1][JOLTAGE] - adaptors[i][JOLTAGE]
+        if diff not in differences:
+            differences[diff] = 1
+        else:
+            differences[diff] += 1
+    pprint(differences)
+    diff_prod = differences[1] * differences[3]
+    print(f'Difference product: {diff_prod}')
+
+    for i in reversed(range(0, len(adaptors) - 1)):
+        for j in range(i + 1, i + 1 + 3):
+            if j == len(adaptors):
+                break
+            if adaptors[j][JOLTAGE] > adaptors[i][JOLTAGE] + 3:
+                break
+            #print(f'-= {i},{j} {adaptors[i]},{adaptors[j]}')
+            if adaptors[j][OPTIONS] == 0:
+                adaptors[i][OPTIONS] += 1
+            else:
+                adaptors[i][OPTIONS] += adaptors[j][OPTIONS]
+        #print(adaptors)
+
+    print(f'Total options: {adaptors[0][OPTIONS]}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
