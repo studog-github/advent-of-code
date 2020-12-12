@@ -14,3 +14,25 @@ def signeq(a, b):
 
 def manhattan_dist(p1, p2):
     return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1])
+
+def rotate_coords(pos, deg, orig=[0, 0]):
+    # Currently only handles increments of 90 degrees
+    # Default rotation is counterclockwise
+    x, y = pos[0], pos[1]
+    ndeg = deg % 360
+    ox, oy = orig[0], orig[1]
+
+    if ndeg == 90:
+        nx = -(y - oy) + ox
+        ny =  (x - ox) + oy
+    elif ndeg == 180:
+        nx = 2 * ox - x
+        ny = 2 * oy - y
+    elif ndeg == 270:
+        nx =  (y - oy) + ox
+        ny = -(x - ox) + oy
+    else:
+        nx = x
+        ny = y
+
+    return [nx, ny]
