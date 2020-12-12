@@ -119,7 +119,8 @@ class computer:
 
     STATE_INITED = 0
     STATE_RUNNING = 1
-    STATE_HALTED = 2
+    STATE_PAUSED = 2
+    STATE_HALTED = 3
 
     def poke_user_input(self):
         return int(raw_input("poke needs a number: "))
@@ -145,10 +146,14 @@ class computer:
             p_opcode = self.program[self.ip] % 100
             p_opmode = str(self.program[self.ip])[:-2][::-1]
             #print "ip: %d %s mode: '%s'" % (self.ip, self.program[self.ip:self.ip+4], p_opmode)
-            if p_opcode not in computer.opcodes:
+            if p_opcode not in self.opcodes:
                 print "ERROR: Unknown opcode %d at index %d, halted" % (p_opcode, self.ip)
-                return
-            elif computer.opcodes[p_opcode] is None:
                 self.state = self.STATE_HALTED
                 return
-            computer.opcodes[p_opcode](self, p_opmode)
+            elif self.opcodes[p_opcode] is None:
+                self.state = self.STATE_HALTED
+                return
+            self.opcodes[p_opcode](self, p_opmode)
+            if self.opcodes[p_opcode] == computer.__dict__['peek']:
+                self.state = self.STATE_PAUSED
+                return
