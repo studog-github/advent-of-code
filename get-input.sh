@@ -18,6 +18,12 @@ Gets the AoC input for the specified day/year.
 EOT
 }
 
+COOKIE_FILE="${THIS_PATH}/aoc-cookies"
+if [ ! -f "$COOKIE_FILE" ]; then
+  echo "$THIS: Error: Cookie file '${COOKIE_FILE}'"
+  exit
+fi
+
 while [ $# -gt 0 ]; do
     case "$1" in
         -h|--help)
@@ -37,7 +43,7 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-PADDAY=$(printf "%02d" $DAY)
+PADDAY="$(printf "%02d" $DAY)"
 
 # Get this curl command by open Chrome developer tools on the input page, reload
 # to capture the network request, right click on the request,
@@ -46,5 +52,5 @@ PADDAY=$(printf "%02d" $DAY)
 
 curl "https://adventofcode.com/${YEAR}/day/${DAY}/input"  \
     -o "${PADDAY}a-input"  \
-    --cookie aoc-cookies  \
+    --cookie "$COOKIE_FILE"  \
     --compressed
