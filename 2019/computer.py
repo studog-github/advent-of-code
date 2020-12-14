@@ -6,6 +6,8 @@ class computer:
     # '1' - Immediate
     # '2' - Relative
 
+    # Refactor parameter modes
+
     def addition(self, mode):
         num_instns = 4
         mode += '0' * (num_instns - 1 - len(mode))
@@ -143,6 +145,7 @@ class computer:
         self.relbase += r1
         self.ip += num_instns
 
+    # Add num instructions here to improve debugging output
     opcodes = {
         1: addition,
         2: multiplication,
@@ -167,11 +170,17 @@ class computer:
     def peek_user_output(self, v):
         print(f'peek: {v}')
 
+    # __repr()__ and __str()__ ?
+
     # Regular members and methods
     def __init__(self, program, fin=None, fout=None):
         self.original_program = program
         self.poke_input = fin if fin else self.poke_user_input
         self.peek_output = fout if fout else self.peek_user_output
+
+    # Big memory:
+    # - dict for memory locations
+    # - parse program into memory
 
     def reset(self):
         self.program = list(self.original_program)
