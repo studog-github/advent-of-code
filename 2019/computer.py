@@ -123,7 +123,7 @@ class computer:
     STATE_HALTED = 3
 
     def poke_user_input(self):
-        return int(raw_input("poke needs a number: "))
+        return int(raw_input('poke needs a number: '))
 
     def peek_user_output(self, v):
         print(f'peek: {v}')
