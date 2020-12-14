@@ -1,0 +1,101 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from pprint import pprint
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    lines = input.read().splitlines()
+
+    def apply_mask(mask, value):
+        for i in range(0, len(mask)):
+            if mask[i] == 'X':
+                continue
+            else:
+                value[i] = mask[i]
+        return value
+
+    memory = {}
+    for line in lines:
+        part1, part2 = line.strip().split(' = ')
+        if part1 == 'mask':
+            mask = part2
+        else:
+            address = int(part1.strip('mem[]'))
+            value = list('{0:036b}'.format(int(part2)))
+            memory[address] = apply_mask(mask, value)
+
+    total = 0
+    for address in sorted(memory.keys()):
+        val_string = ''.join(memory[address])
+        print(f'{address:10d}: {val_string}')
+        total += int(val_string, base=2)
+    print(f'A: Total is {total}')
+
+    def addrs(addr, mask):
+        def addr_gen():
+            wr_addr = list('{0:036b}'.format(addr))
+            numx = mask.count('X')
+            for i in range(0, pow(2, numx)):
+                combo_bits = f'{i:0{numx}b}'
+                k = 0
+                for j in range(0, len(mask)):
+                    if mask[j] == '0':
+                        continue
+                    elif mask[j] == '1':
+                        wr_addr[j] = '1'
+                    else:
+                        wr_addr[j] = combo_bits[k]
+                        k += 1
+                yield int(''.join(wr_addr), base=2)
+
+        gen = addr_gen()
+        return gen
+
+    memory2 = {}
+    for line in lines:
+        part1, part2 = line.strip().split(' = ')
+        if part1 == 'mask':
+            mask = part2
+        else:
+            address = int(part1.strip('mem[]'))
+            value = int(part2)
+            for addr in addrs(address, mask):
+                #print(f'addr[{addr}] = {value}')
+                memory2[addr] = value
+
+    total = 0
+    for address in sorted(memory2.keys()):
+        print(f'{address:10d}: {memory2[address]}')
+        total += memory2[address]
+    print(f'A: Total is {total}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
