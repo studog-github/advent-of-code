@@ -1,0 +1,83 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+DEFAULT_WIDTH = 25
+DEFAULT_HEIGHT = 6
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    arg_parser.add_argument("-w", "--width", default=DEFAULT_WIDTH, type=int,
+                            help="specify the SIF width (default: %(default)s)", metavar="width")
+    arg_parser.add_argument("-e", "--height", default=DEFAULT_HEIGHT, type=int,
+                            help="specify the SIF height (default: %(default)s)", metavar="height")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    width = args.width
+    height = args.height
+
+    BLACK = 0
+    WHITE = 1
+    TRANS = 2
+
+    # Main loop
+
+    pixels = [int(i) for i in list(input.read().strip())]
+    pix_per_layer = width * height
+    layers = []
+    while len(pixels) > 0:
+        layer = pixels[0:pix_per_layer]
+        layers.append(layer)
+        del pixels[0:pix_per_layer]
+
+    min_zeros = [pix_per_layer + 1, None]
+    for i in range(0, len(layers)):
+        layer = layers[i]
+        num_zeros = layer.count(0)
+        if num_zeros < min_zeros[0]:
+            min_zeros[0] = num_zeros
+            min_zeros[1] = i
+    num_ones = layers[min_zeros[1]].count(1)
+    num_twos = layers[min_zeros[1]].count(2)
+    prod = num_ones * num_twos
+    print(f'A: product {prod}')
+
+    image = []
+    for i in range(0, pix_per_layer):
+        for j in range(0, len(layers)):
+            pix = layers[j][i]
+            if pix == BLACK:
+                image.append(' ')
+                break
+            if pix == WHITE:
+                image.append(pix)
+                break
+
+    for i in range(0, height):
+        print(''.join([str(i) for i in image[i*width:i*width+width]]))
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
