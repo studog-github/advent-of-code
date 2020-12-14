@@ -154,6 +154,3 @@ class computer:
                 self.state = self.STATE_HALTED
                 return
             self.opcodes[p_opcode](self, p_opmode)
-            if self.opcodes[p_opcode] == computer.__dict__['peek']:
-                self.state = self.STATE_PAUSED
-                return
