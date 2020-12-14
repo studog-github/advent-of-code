@@ -1,14 +1,24 @@
 class computer:
     # Machine operations
+
+    # Parameter modes:
+    # '0' - Position
+    # '1' - Immediate
+    # '2' - Relative
+
     def addition(self, mode):
         num_instns = 4
         mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
+        elif mode[0] == '2':
+            r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
         if mode[1] == '0':
             r2 = self.program[r2]
+        elif mode[1] == '2':
+            r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 + r2
         self.ip += num_instns
@@ -19,9 +29,13 @@ class computer:
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
+        elif mode[0] == '2':
+            r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
         if mode[1] == '0':
             r2 = self.program[r2]
+        elif mode[1] == '2':
+            r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 * r2
         self.ip += num_instns
@@ -41,6 +55,8 @@ class computer:
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
+        elif mode[0] == '2':
+            r1 = self.program[r1 + self.relbase]
         #print(f'= peek returns {r1}')
         self.peek_output(r1)
         self.ip += num_instns
@@ -51,9 +67,13 @@ class computer:
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
+        elif mode[0] == '2':
+            r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
         if mode[1] == '0':
             r2 = self.program[r2]
+        elif mode[1] == '2':
+            r2 = self.program[r2 + self.relbase]
         if r1 != 0:
             self.ip = r2
         else:
@@ -65,9 +85,13 @@ class computer:
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
+        elif mode[0] == '2':
+            r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
         if mode[1] == '0':
             r2 = self.program[r2]
+        elif mode[1] == '2':
+            r2 = self.program[r2 + self.relbase]
         if r1 == 0:
             self.ip = r2
         else:
@@ -79,9 +103,13 @@ class computer:
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
+        elif mode[0] == '2':
+            r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
         if mode[1] == '0':
             r2 = self.program[r2]
+        elif mode[1] == '2':
+            r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         if r1 < r2:
             self.program[s1] = 1
@@ -95,14 +123,24 @@ class computer:
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
+        elif mode[0] == '2':
+            r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
         if mode[1] == '0':
             r2 = self.program[r2]
+        elif mode[1] == '2':
+            r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         if r1 == r2:
             self.program[s1] = 1
         else:
             self.program[s1] = 0
+        self.ip += num_instns
+
+    def chrelbase(self, mode):
+        num_instns = 2
+        r1 = self.program[self.ip + 1]
+        self.relbase += r1
         self.ip += num_instns
 
     opcodes = {
@@ -114,6 +152,7 @@ class computer:
         6: jumpiffalse,
         7: lessthan,
         8: equals,
+        9: chrelbase,
         99: None,
     }
 
@@ -137,6 +176,7 @@ class computer:
     def reset(self):
         self.program = list(self.original_program)
         self.ip = 0
+        self.relbase = 0
         self.state = self.STATE_INITED
 
     def run(self):
