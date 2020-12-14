@@ -30,7 +30,7 @@ class computer:
         num_instns = 2
         mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.poke_input()
-        #print("-= poke got %d" % r1)
+        #print(f'-= poke got {r1}')
         s1 = self.program[self.ip + 1]
         self.program[s1] = r1
         self.ip += num_instns
@@ -41,7 +41,7 @@ class computer:
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
-        #print("-= peek returns %d" % r1)
+        #print(f'= peek returns {r1}')
         self.peek_output(r1)
         self.ip += num_instns
         
@@ -126,7 +126,7 @@ class computer:
         return int(raw_input("poke needs a number: "))
 
     def peek_user_output(self, v):
-        print("peek: %d" % (v))
+        print(f'peek: {v}')
 
     # Regular members and methods
     def __init__(self, program, fin=None, fout=None):
@@ -142,12 +142,12 @@ class computer:
     def run(self):
         self.state = self.STATE_RUNNING
         while True:
-            #print "program %s" % self.program
+            print(f'program {self.program}')
             p_opcode = self.program[self.ip] % 100
             p_opmode = str(self.program[self.ip])[:-2][::-1]
-            #print "ip: %d %s mode: '%s'" % (self.ip, self.program[self.ip:self.ip+4], p_opmode)
+            print(f"ip: {self.ip} {self.program[self.ip:self.ip+4]} mode: '{p_opmode}' relbase: {self.relbase}")
             if p_opcode not in self.opcodes:
-                print "ERROR: Unknown opcode %d at index %d, halted" % (p_opcode, self.ip)
+                print(f'ERROR: Unknown opcode {p_opcode} at index {self.ip}, halted')
                 self.state = self.STATE_HALTED
                 return
             elif self.opcodes[p_opcode] is None:
