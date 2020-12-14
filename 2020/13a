@@ -1,0 +1,90 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    start_time = int(input.readline().strip())
+    raw_busses = input.readline().split(',')
+
+    busses = []
+    upper_bound = 1
+    for i in range(0, len(raw_busses)):
+        if raw_busses[i] == 'x':
+            continue
+        busses.append([int(raw_busses[i]), i])
+        upper_bound *= busses[-1][0]
+
+    #all_busses = [int(i) if i.isdigit() else i for i in raw_busses.split(',')]
+    #busses = [int(i) for i in raw_busses.replace(',x', '').replace('x,','').split(',')]
+
+    min_wait = [None, None]
+    for bus in busses:
+        bus = bus[0]
+        wait = (((start_time // bus) + 1) * bus) - start_time
+        print(f'Bus {bus} waitfor is {wait} minutes')
+        if min_wait[0] is None or min_wait[1] > wait:
+            min_wait[0] = bus
+            min_wait[1] = wait
+    prod = min_wait[0] * min_wait[1]
+    print(f'A: Bus {min_wait[0]} waitfor is {min_wait[1]}. Product {prod}')
+
+    ##from itertools import count
+    ##t, step = 0, 1
+    ##for bus, offs in busses:
+        ##for c in count(t, step):
+            ##if (c + offs) % bus == 0:
+                ##t, step = c, step * bus
+                ##break
+    ##print(f'part 2: {t}')
+    ##return
+
+    print(f'-= {busses}')
+    time = 0
+    increment = busses[0][0]
+    idx = 1
+    while True:
+        if time > upper_bound:
+            print(f'{time} > upper bound of {upper_bound}')
+            return
+        #print(f'-= {idx}: {increment}: {time}')
+        if (time + busses[idx][1]) % busses[idx][0] == 0:
+        #if busses[idx][0] - (time % busses[idx][0]) == busses[idx][1]:
+            print(f'-= {idx}: {increment}: {time}')
+            increment *= busses[idx][0]
+            idx += 1
+        if idx >= len(busses):
+            break
+        time += increment
+
+    print(f'B: Time {time}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
