@@ -1,0 +1,57 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    numbers = [int(i) for i in input.readline().split(',')]
+    numbers.insert(0, 0)
+    last_seen = {}
+    for turn in range(1, len(numbers) - 1):
+        #print(f'-= {turn}: {numbers[turn]}')
+        last_seen[numbers[turn]] = turn
+    turn += 1
+    #print(f'-+ {turn} {last_seen}')
+    this_num = numbers[turn]
+    while turn < 30000000:
+        #print(f'-= {turn}: {this_num}')
+        if turn == 2020:
+            print(f'A: {turn}: {this_num}')
+        if this_num not in last_seen:
+            next_num = 0
+        else:
+            next_num = turn - last_seen[this_num]
+        last_seen[this_num] = turn
+        this_num = next_num
+        turn += 1
+        #print(f'-+ {turn} {last_seen}')
+    print(f'B: {turn}: {this_num}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
