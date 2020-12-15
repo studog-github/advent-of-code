@@ -1,4 +1,4 @@
-class computer:
+class Computer:
     # Machine operations
 
     # Parameter modes:
