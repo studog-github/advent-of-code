@@ -145,18 +145,29 @@ class Computer:
         self.relbase += r1
         self.ip += num_instns
 
+    OP_ADD = 1
+    OP_MULT = 2
+    OP_POKE = 3
+    OP_PEEK = 4
+    OP_JMPT = 5
+    OP_JMPF = 6
+    OP_LT = 7
+    OP_EQ = 8
+    OP_CHRELB = 9
+    OP_HALT = 99
+
     # Add num instructions here to improve debugging output
     opcodes = {
-        1: addition,
-        2: multiplication,
-        3: poke,
-        4: peek,
-        5: jumpiftrue,
-        6: jumpiffalse,
-        7: lessthan,
-        8: equals,
-        9: chrelbase,
-        99: None,
+        OP_ADD: addition,
+        OP_MULT: multiplication,
+        OP_POKE: poke,
+        OP_PEEK: peek,
+        OP_JMPT: jumpiftrue,
+        OP_JMPF: jumpiffalse,
+        OP_LT: lessthan,
+        OP_EQ: equals,
+        OP_CHRELB: chrelbase,
+        OP_HALT: None,
     }
 
     STATE_INITED = 0
