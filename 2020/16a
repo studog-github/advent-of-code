@@ -1,0 +1,120 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+import re
+from pprint import pprint
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    fields = {}
+    all_valid_values = []
+    for line in input:
+        line = line.strip()
+        if line == '':
+            break
+        match = re.search(r'^([^:]+): (\d+)-(\d+) or (\d+)-(\d+)', line)
+        #print(f'-= {match[1]} | {match[2]} | {match[3]} | {match[4]} | {match[5]}')
+        range1 = list(range(int(match[2]), int(match[3]) + 1))
+        range2 = list(range(int(match[4]), int(match[5]) + 1))
+        fields[match[1]] = sorted(set(range1 + range2))
+        all_valid_values += fields[match[1]]
+    all_valid_values = sorted(set(all_valid_values))
+    #print(fields)
+    #print(all_valid_values)
+
+    _ = input.readline()  # 'your ticket:' line
+    my_ticket = [int(i) for i in input.readline().split(',')]
+    #print(my_ticket)
+    _ = input.readline()  # Blank line
+    _ = input.readline()  # 'nearby tickets:' line
+
+    tickets = []
+    for line in input:
+        tickets.append([int(i) for i in line.split(',')])
+    #print(tickets)
+    #print(len(tickets))
+
+    scan_err_rate = 0
+    # Traverse in reverse for safe deletion-during-traversal
+    for ticket in reversed(tickets):
+        discard = False
+        for num in ticket:
+            if num not in all_valid_values:
+                scan_err_rate += num
+                discard = True
+        if discard:
+            tickets.remove(ticket)
+    #print(tickets)
+    #print(len(tickets))
+    print(f'A: Scanning error rate: {scan_err_rate}')
+
+    field_order = {}
+
+    while True:
+        starting_len = len(fields)
+        for value in range(0, len(my_ticket)):
+            if tickets[0][value] is None:
+                continue
+            potential_field_matches = []
+            for field in fields:
+                eliminated = False
+                for ticket in tickets:
+                    if ticket[value] not in fields[field]:
+                        #print(f'-= {ticket[0]} not in {fields[field]}')
+                        eliminated = True
+                        break
+                if not eliminated:
+                    potential_field_matches.append(field)
+                    if len(potential_field_matches) > 1:
+                        break
+                #print(f'-= {potential_field_matches}')
+            if len(potential_field_matches) != 1:
+                #print(f'{value} has {len(potential_field_matches)} matches, skip')
+                continue
+            field_order[value] = potential_field_matches[0]
+            del fields[potential_field_matches[0]]
+            tickets[0][value] = None
+        ending_len = len(fields)
+        if ending_len == 0:
+            break
+        elif ending_len == starting_len:
+            print(f'-= start {starting_len} == end {ending_len}, bailing')
+            break
+    #pprint(field_order)
+
+    part_b_prod = 1
+    for value in field_order:
+        if 'departure' in field_order[value]:
+            part_b_prod *= my_ticket[value]
+
+    print(f'B: Product is {part_b_prod}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
