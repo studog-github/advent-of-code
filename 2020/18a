@@ -1,0 +1,132 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+import copy
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    def eval_exp_a(line):
+        #print(f'-= {line}')
+        accum = None
+        op = None
+        while True:
+            if len(line) == 0:
+                return 0 if accum is None else accum
+            token = line.pop(0)
+            #print(f'-= acc {accum}, op {op}, token {token}')
+            if token.isdigit():
+                if accum is None:
+                    accum = int(token)
+                elif op == '+':
+                    accum += int(token)
+                elif op == '*':
+                    accum *= int(token)
+            elif token == '+':
+                op = '+'
+            elif token == '*':
+                op = '*'
+            elif token == '(':
+                if accum is None:
+                    accum = eval_exp_a(line)
+                elif op == '+':
+                    accum += eval_exp_a(line)
+                elif op == '*':
+                    accum *= eval_exp_a(line)
+            elif token == ')':
+                return 0 if accum is None else accum
+            else:
+                print(f"Error: Unrecognized token '{token}'")
+                return
+
+    # Four cases:
+    # 1 + 9 + 7 already handled
+    # 1 + 9 * 7 already handled, okay left to right
+    # 1 * 9 + 7 need to get value of subexpression before proceeding
+    # 1 * 9 * 7 already handled
+
+    def eval_exp_b(line, priority = False, indent=''):
+        #print(f"{indent}-+ {''.join(line)}, {priority}")
+        accum = None
+        op = None
+        while True:
+            if len(line) == 0:
+                return 0 if accum is None else accum
+            token = line.pop(0)
+            #print(f'{indent}-=   acc {accum}, op {op}, token {token}')
+            if token.isdigit():
+                if accum is None:
+                    accum = int(token)
+                elif op == '+':
+                    accum += int(token)
+                elif op == '*':
+                    accum *= int(token)
+            elif token == '+':
+                op = '+'
+            elif token == '*':
+                op = '*'
+                if priority:
+                    #print(f'{indent}-= re-insert {token}')
+                    line.insert(0, token)
+                    return 0 if accum is None else accum
+                else:
+                    accum *= eval_exp_b(line, True, indent + '    ')
+                    #print(f'{indent}-- {priority}')
+            elif token == '(':
+                if accum is None:
+                    accum = eval_exp_b(line, False, indent + '    ')
+                    #print(f'{indent}-- {priority}')
+                elif op == '+':
+                    accum += eval_exp_b(line, False, indent + '    ')
+                    #print(f'{indent}-- {priority}')
+                elif op == '*':
+                    accum *= eval_exp_b(line, False, indent + '    ')
+                    #print(f'{indent}-- {priority}')
+            elif token == ')':
+                if priority:
+                    #print(f'{indent}-= re-insert {token}')
+                    line.insert(0, token)
+                    return 0 if accum is None else accum
+                else:
+                    return 0 if accum is None else accum
+            else:
+                print(f"Error: Unrecognized token '{token}'")
+                return
+
+    total_a = 0
+    total_b = 0
+    for line in input:
+        line = list(line.strip().replace(' ', ''))
+        total_a += eval_exp_a(copy.deepcopy(line))
+        total_b += eval_exp_b(copy.deepcopy(line))
+    print(f'A: Total {total_a}')
+    print(f'B: Total {total_b}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
