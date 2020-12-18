@@ -1,0 +1,130 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+import copy
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    INACTIVE = '.'
+    ACTIVE = '#'
+
+    def print_grid(grid):
+        zs, ys, xs = [sorted(i) for i in zip(*list(grid.keys()))]
+
+        for z in range(zs[0], zs[-1] + 1):
+            print(f'z={z}')
+            for y in range(ys[0], ys[-1] + 1):
+                row = ''
+                for x in range(xs[0], xs[-1] + 1):
+                    if (z,y,x) in grid:
+                        row += grid[z,y,x]
+                    else:
+                        row += INACTIVE
+                print(f'{row}')
+            print()
+
+    def neighbours(z, y, x):
+        def gen_neighbours():
+            # Unrolled for speed
+            yield (z + -1, y + -1, x + -1)
+            yield (z + -1, y + -1, x +  0)
+            yield (z + -1, y + -1, x + +1)
+            yield (z + -1, y +  0, x + -1)
+            yield (z + -1, y +  0, x +  0)
+            yield (z + -1, y +  0, x + +1)
+            yield (z + -1, y + +1, x + -1)
+            yield (z + -1, y + +1, x +  0)
+            yield (z + -1, y + +1, x + +1)
+            yield (z +  0, y + -1, x + -1)
+            yield (z +  0, y + -1, x +  0)
+            yield (z +  0, y + -1, x + +1)
+            yield (z +  0, y +  0, x + -1)
+            # A voxel isn't its own neighbour
+            yield (z +  0, y +  0, x + +1)
+            yield (z +  0, y + +1, x + -1)
+            yield (z +  0, y + +1, x +  0)
+            yield (z +  0, y + +1, x + +1)
+            yield (z + +1, y + -1, x + -1)
+            yield (z + +1, y + -1, x +  0)
+            yield (z + +1, y + -1, x + +1)
+            yield (z + +1, y +  0, x + -1)
+            yield (z + +1, y +  0, x +  0)
+            yield (z + +1, y +  0, x + +1)
+            yield (z + +1, y + +1, x + -1)
+            yield (z + +1, y + +1, x +  0)
+            yield (z + +1, y + +1, x + +1)
+        return gen_neighbours()
+
+    def a_cycle(grid):
+        field = {}
+        new_voxels = {}
+
+        # Fertilize
+        for voxel in grid:
+            for neighbour in neighbours(*(voxel)):
+                if neighbour not in field:
+                    field[neighbour] = 1
+                else:
+                    field[neighbour] += 1
+
+        # Live or die, active cells
+        for voxel in grid:
+            if voxel not in field:
+                continue
+            if field[voxel] in [2, 3]:
+                new_voxels[voxel] = ACTIVE
+            del field[voxel]
+
+        # Live or die, inactive cells
+        for voxel in field:
+            if field[voxel] in [3]:
+                new_voxels[voxel] = ACTIVE
+
+        return new_voxels
+
+    grid = {}
+    for y, line in enumerate(input):
+        line = line.strip()
+        for x in range(0, len(line)):
+            if line[x] == ACTIVE:
+                grid[0,y,x] = line[x]
+
+    #pprint(grid)
+    #print_grid(grid)
+
+    a_grid = copy.deepcopy(grid)
+    for i in range(0, 6):
+        a_grid = a_cycle(a_grid)
+        #print_grid(a_grid)
+    print(f'A: {len(a_grid)} active voxels')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
