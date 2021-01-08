@@ -10,7 +10,6 @@ class Computer:
 
     def addition(self, mode):
         num_instns = self.opcodes[self.OP_ADD][self._OP_NINST]
-        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -27,7 +26,6 @@ class Computer:
 
     def multiplication(self, mode):
         num_instns = self.opcodes[self.OP_MULT][self._OP_NINST]
-        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -44,7 +42,6 @@ class Computer:
 
     def poke(self, mode):
         num_instns = self.opcodes[self.OP_POKE][self._OP_NINST]
-        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.poke_input()
         #print(f'-= poke got {r1}')
         s1 = self.program[self.ip + 1]
@@ -53,7 +50,6 @@ class Computer:
         
     def peek(self, mode):
         num_instns = self.opcodes[self.OP_PEEK][self._OP_NINST]
-        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -65,7 +61,6 @@ class Computer:
         
     def jumpiftrue(self, mode):
         num_instns = self.opcodes[self.OP_JMPT][self._OP_NINST]
-        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -83,7 +78,6 @@ class Computer:
 
     def jumpiffalse(self, mode):
         num_instns = self.opcodes[self.OP_JMPF][self._OP_NINST]
-        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -101,7 +95,6 @@ class Computer:
 
     def lessthan(self, mode):
         num_instns = self.opcodes[self.OP_LT][self._OP_NINST]
-        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -121,7 +114,6 @@ class Computer:
 
     def equals(self, mode):
         num_instns = self.opcodes[self.OP_EQ][self._OP_NINST]
-        mode += '0' * (num_instns - 1 - len(mode))
         r1 = self.program[self.ip + 1]
         if mode[0] == '0':
             r1 = self.program[r1]
@@ -207,12 +199,14 @@ class Computer:
             print(f'program {self.program}')
             p_opcode = self.program[self.ip] % 100
             p_opmode = str(self.program[self.ip])[:-2][::-1]
-            print(f"ip: {self.ip} {self.program[self.ip:self.ip+self.opcodes[p_opcode][self._OP_NINST]]} mode: '{p_opmode}' relbase: {self.relbase}")
             if p_opcode not in self.opcodes:
                 print(f'ERROR: Unknown opcode {p_opcode} at index {self.ip}, halted')
                 self.state = self.STATE_HALTED
                 return
-            elif self.opcodes[p_opcode][self._OP_FN] is None:
+            num_insts = self.opcodes[p_opcode][self._OP_NINST]
+            p_opmode += '0' * (num_insts - 1 - len(p_opmode))
+            print(f"ip: {self.ip} {self.program[self.ip:self.ip+num_insts]} mode: '{p_opmode}' relbase: {self.relbase}")
+            if self.opcodes[p_opcode][self._OP_FN] is None:
                 self.state = self.STATE_HALTED
                 return
             self.opcodes[p_opcode][self._OP_FN](self, p_opmode)
