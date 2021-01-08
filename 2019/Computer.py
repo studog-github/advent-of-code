@@ -203,11 +203,11 @@ class Computer:
         while True:
             print(f'program {self.program}')
             p_opcode = self.program[self.ip] % 100
-            p_opmode = str(self.program[self.ip])[:-2][::-1]
             if p_opcode not in self.opcodes:
                 print(f'ERROR: Unknown opcode {p_opcode} at index {self.ip}, halted')
                 self.state = self.STATE_HALTED
                 return
+            p_opmode = str(self.program[self.ip])[:-2][::-1]
             num_insts = self.opcodes[p_opcode][self._OP_NINST]
             p_opmode += '0' * (num_insts - 1 - len(p_opmode))
             print(f"ip: {self.ip} {self.program[self.ip:self.ip+num_insts]} mode: '{p_opmode}' relbase: {self.relbase}")
