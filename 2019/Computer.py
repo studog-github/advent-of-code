@@ -165,9 +165,10 @@ class Computer:
     }
 
     STATE_INITED = 0
-    STATE_RUNNING = 1
-    STATE_PAUSED = 2
-    STATE_HALTED = 3
+    STATE_RESET = 1
+    STATE_RUNNING = 2
+    STATE_PAUSED = 3
+    STATE_HALTED = 4
 
     def poke_user_input(self):
         return int(raw_input('poke needs a number: '))
@@ -182,6 +183,7 @@ class Computer:
         self.original_program = program
         self.poke_input = fin if fin else self.poke_user_input
         self.peek_output = fout if fout else self.peek_user_output
+        self.state = self.STATE_INITED
 
     # Big memory:
     # - dict for memory locations
@@ -191,7 +193,7 @@ class Computer:
         self.program = list(self.original_program)
         self.ip = 0
         self.relbase = 0
-        self.state = self.STATE_INITED
+        self.state = self.STATE_RESET
 
     def run(self):
         self.state = self.STATE_RUNNING
