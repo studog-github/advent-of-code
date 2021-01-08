@@ -178,7 +178,10 @@ class Computer:
 
     # __repr()__ and __str()__ ?
 
+    #
     # Regular members and methods
+    #
+
     def __init__(self, program, fin=None, fout=None):
         self.original_program = program
         self.poke_input = fin if fin else self.poke_user_input
