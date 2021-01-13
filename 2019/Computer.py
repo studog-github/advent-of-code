@@ -1,17 +1,15 @@
 class Computer:
     # Machine operations
 
-    _OPMODE_POS = '0'
-    _OPMODE_IMM = '1'
-    _OPMODE_REL = '2'
-
-    # Refactor parameter modes
+    OPMODE_POS = '0'
+    OPMODE_IMM = '1'
+    OPMODE_REL = '2'
 
     def _get_operand(self, index):
         operand = self.program[self.ip + index]
-        if self.opmode[index] == self._OPMODE_POS:
+        if self.opmode[index] == self.OPMODE_POS:
             operand = self.program[operand]
-        elif self.opmode[index] == self._OPMODE_REL:
+        elif self.opmode[index] == self.OPMODE_REL:
             operand = self.program[operand + self.relbase]
         return operand
 
@@ -144,7 +142,7 @@ class Computer:
                 return
             self.opmode = str(self.program[self.ip])[:-2][::-1]
             self.oplen = self.opcodes[self.opcode][self._OP_NINST]
-            self.opmode = '.' + self.opmode + self._OPMODE_POS * (self.oplen - 1 - len(self.opmode))
+            self.opmode = '.' + self.opmode + self.OPMODE_POS * (self.oplen - 1 - len(self.opmode))
             print(f"ip: {self.ip} {self.program[self.ip:self.ip+self.oplen]} mode: '{self.opmode}' relbase: {self.relbase}")
             self.opfunc = self.opcodes[self.opcode][self._OP_FN]
             if self.opfunc is None:
