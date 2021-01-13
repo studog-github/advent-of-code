@@ -1,38 +1,29 @@
 class Computer:
     # Machine operations
 
-    # Parameter modes:
-    # '0' - Position
-    # '1' - Immediate
-    # '2' - Relative
+    _OPMODE_POS = '0'
+    _OPMODE_IMM = '1'
+    _OPMODE_REL = '2'
 
     # Refactor parameter modes
 
+    def _get_operand(self, index):
+        operand = self.program[self.ip + index]
+        if self.opmode[index] == self._OPMODE_POS:
+            operand = self.program[operand]
+        elif self.opmode[index] == self._OPMODE_REL:
+            operand = self.program[operand + self.relbase]
+        return operand
+
     def addition(self):
-        r1 = self.program[self.ip + 1]
-        if self.opmode[0] == '0':
-            r1 = self.program[r1]
-        elif self.opmode[0] == '2':
-            r1 = self.program[r1 + self.relbase]
-        r2 = self.program[self.ip + 2]
-        if self.opmode[1] == '0':
-            r2 = self.program[r2]
-        elif self.opmode[1] == '2':
-            r2 = self.program[r2 + self.relbase]
+        r1 = self._get_operand(1)
+        r2 = self._get_operand(2)
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 + r2
 
     def multiplication(self):
-        r1 = self.program[self.ip + 1]
-        if self.opmode[0] == '0':
-            r1 = self.program[r1]
-        elif self.opmode[0] == '2':
-            r1 = self.program[r1 + self.relbase]
-        r2 = self.program[self.ip + 2]
-        if self.opmode[1] == '0':
-            r2 = self.program[r2]
-        elif self.opmode[1] == '2':
-            r2 = self.program[r2 + self.relbase]
+        r1 = self._get_operand(1)
+        r2 = self._get_operand(2)
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 * r2
 
@@ -41,55 +32,27 @@ class Computer:
         #print(f'-= poke got {r1}')
         s1 = self.program[self.ip + 1]
         self.program[s1] = r1
-        
+
     def peek(self):
-        r1 = self.program[self.ip + 1]
-        if self.opmode[0] == '0':
-            r1 = self.program[r1]
-        elif self.opmode[0] == '2':
-            r1 = self.program[r1 + self.relbase]
+        r1 = self._get_operand(1)
         #print(f'= peek returns {r1}')
         self.peek_output(r1)
-        
+
     def jumpiftrue(self):
-        r1 = self.program[self.ip + 1]
-        if self.opmode[0] == '0':
-            r1 = self.program[r1]
-        elif self.opmode[0] == '2':
-            r1 = self.program[r1 + self.relbase]
-        r2 = self.program[self.ip + 2]
-        if self.opmode[1] == '0':
-            r2 = self.program[r2]
-        elif self.opmode[1] == '2':
-            r2 = self.program[r2 + self.relbase]
+        r1 = self._get_operand(1)
+        r2 = self._get_operand(2)
         if r1 != 0:
             self.ip = r2 - self.oplen
 
     def jumpiffalse(self):
-        r1 = self.program[self.ip + 1]
-        if self.opmode[0] == '0':
-            r1 = self.program[r1]
-        elif self.opmode[0] == '2':
-            r1 = self.program[r1 + self.relbase]
-        r2 = self.program[self.ip + 2]
-        if self.opmode[1] == '0':
-            r2 = self.program[r2]
-        elif self.opmode[1] == '2':
-            r2 = self.program[r2 + self.relbase]
+        r1 = self._get_operand(1)
+        r2 = self._get_operand(2)
         if r1 == 0:
             self.ip = r2 - self.oplen
 
     def lessthan(self):
-        r1 = self.program[self.ip + 1]
-        if self.opmode[0] == '0':
-            r1 = self.program[r1]
-        elif self.opmode[0] == '2':
-            r1 = self.program[r1 + self.relbase]
-        r2 = self.program[self.ip + 2]
-        if self.opmode[1] == '0':
-            r2 = self.program[r2]
-        elif self.opmode[1] == '2':
-            r2 = self.program[r2 + self.relbase]
+        r1 = self._get_operand(1)
+        r2 = self._get_operand(2)
         s1 = self.program[self.ip + 3]
         if r1 < r2:
             self.program[s1] = 1
@@ -97,16 +60,8 @@ class Computer:
             self.program[s1] = 0
 
     def equals(self):
-        r1 = self.program[self.ip + 1]
-        if self.opmode[0] == '0':
-            r1 = self.program[r1]
-        elif self.opmode[0] == '2':
-            r1 = self.program[r1 + self.relbase]
-        r2 = self.program[self.ip + 2]
-        if self.opmode[1] == '0':
-            r2 = self.program[r2]
-        elif self.opmode[1] == '2':
-            r2 = self.program[r2 + self.relbase]
+        r1 = self._get_operand(1)
+        r2 = self._get_operand(2)
         s1 = self.program[self.ip + 3]
         if r1 == r2:
             self.program[s1] = 1
@@ -189,7 +144,7 @@ class Computer:
                 return
             self.opmode = str(self.program[self.ip])[:-2][::-1]
             self.oplen = self.opcodes[self.opcode][self._OP_NINST]
-            self.opmode += '0' * (self.oplen - 1 - len(self.opmode))
+            self.opmode = '.' + self.opmode + self._OPMODE_POS * (self.oplen - 1 - len(self.opmode))
             print(f"ip: {self.ip} {self.program[self.ip:self.ip+self.oplen]} mode: '{self.opmode}' relbase: {self.relbase}")
             self.opfunc = self.opcodes[self.opcode][self._OP_FN]
             if self.opfunc is None:
