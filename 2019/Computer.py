@@ -8,39 +8,39 @@ class Computer:
 
     # Refactor parameter modes
 
-    def addition(self, mode):
+    def addition(self):
         num_instns = self.opcodes[self.OP_ADD][self._OP_NINST]
         r1 = self.program[self.ip + 1]
-        if mode[0] == '0':
+        if self.opmode[0] == '0':
             r1 = self.program[r1]
-        elif mode[0] == '2':
+        elif self.opmode[0] == '2':
             r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
-        if mode[1] == '0':
+        if self.opmode[1] == '0':
             r2 = self.program[r2]
-        elif mode[1] == '2':
+        elif self.opmode[1] == '2':
             r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 + r2
         self.ip += num_instns
 
-    def multiplication(self, mode):
+    def multiplication(self):
         num_instns = self.opcodes[self.OP_MULT][self._OP_NINST]
         r1 = self.program[self.ip + 1]
-        if mode[0] == '0':
+        if self.opmode[0] == '0':
             r1 = self.program[r1]
-        elif mode[0] == '2':
+        elif self.opmode[0] == '2':
             r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
-        if mode[1] == '0':
+        if self.opmode[1] == '0':
             r2 = self.program[r2]
-        elif mode[1] == '2':
+        elif self.opmode[1] == '2':
             r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 * r2
         self.ip += num_instns
 
-    def poke(self, mode):
+    def poke(self):
         num_instns = self.opcodes[self.OP_POKE][self._OP_NINST]
         r1 = self.poke_input()
         #print(f'-= poke got {r1}')
@@ -48,62 +48,62 @@ class Computer:
         self.program[s1] = r1
         self.ip += num_instns
         
-    def peek(self, mode):
+    def peek(self):
         num_instns = self.opcodes[self.OP_PEEK][self._OP_NINST]
         r1 = self.program[self.ip + 1]
-        if mode[0] == '0':
+        if self.opmode[0] == '0':
             r1 = self.program[r1]
-        elif mode[0] == '2':
+        elif self.opmode[0] == '2':
             r1 = self.program[r1 + self.relbase]
         #print(f'= peek returns {r1}')
         self.peek_output(r1)
         self.ip += num_instns
         
-    def jumpiftrue(self, mode):
+    def jumpiftrue(self):
         num_instns = self.opcodes[self.OP_JMPT][self._OP_NINST]
         r1 = self.program[self.ip + 1]
-        if mode[0] == '0':
+        if self.opmode[0] == '0':
             r1 = self.program[r1]
-        elif mode[0] == '2':
+        elif self.opmode[0] == '2':
             r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
-        if mode[1] == '0':
+        if self.opmode[1] == '0':
             r2 = self.program[r2]
-        elif mode[1] == '2':
+        elif self.opmode[1] == '2':
             r2 = self.program[r2 + self.relbase]
         if r1 != 0:
             self.ip = r2
         else:
             self.ip += num_instns
 
-    def jumpiffalse(self, mode):
+    def jumpiffalse(self):
         num_instns = self.opcodes[self.OP_JMPF][self._OP_NINST]
         r1 = self.program[self.ip + 1]
-        if mode[0] == '0':
+        if self.opmode[0] == '0':
             r1 = self.program[r1]
-        elif mode[0] == '2':
+        elif self.opmode[0] == '2':
             r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
-        if mode[1] == '0':
+        if self.opmode[1] == '0':
             r2 = self.program[r2]
-        elif mode[1] == '2':
+        elif self.opmode[1] == '2':
             r2 = self.program[r2 + self.relbase]
         if r1 == 0:
             self.ip = r2
         else:
             self.ip += num_instns
 
-    def lessthan(self, mode):
+    def lessthan(self):
         num_instns = self.opcodes[self.OP_LT][self._OP_NINST]
         r1 = self.program[self.ip + 1]
-        if mode[0] == '0':
+        if self.opmode[0] == '0':
             r1 = self.program[r1]
-        elif mode[0] == '2':
+        elif self.opmode[0] == '2':
             r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
-        if mode[1] == '0':
+        if self.opmode[1] == '0':
             r2 = self.program[r2]
-        elif mode[1] == '2':
+        elif self.opmode[1] == '2':
             r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         if r1 < r2:
@@ -112,17 +112,17 @@ class Computer:
             self.program[s1] = 0
         self.ip += num_instns
 
-    def equals(self, mode):
+    def equals(self):
         num_instns = self.opcodes[self.OP_EQ][self._OP_NINST]
         r1 = self.program[self.ip + 1]
-        if mode[0] == '0':
+        if self.opmode[0] == '0':
             r1 = self.program[r1]
-        elif mode[0] == '2':
+        elif self.opmode[0] == '2':
             r1 = self.program[r1 + self.relbase]
         r2 = self.program[self.ip + 2]
-        if mode[1] == '0':
+        if self.opmode[1] == '0':
             r2 = self.program[r2]
-        elif mode[1] == '2':
+        elif self.opmode[1] == '2':
             r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         if r1 == r2:
@@ -131,7 +131,7 @@ class Computer:
             self.program[s1] = 0
         self.ip += num_instns
 
-    def chrelbase(self, mode):
+    def chrelbase(self):
         num_instns = self.opcodes[self.OP_CHRELB][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         self.relbase += r1
@@ -215,4 +215,4 @@ class Computer:
             if self.opfunc is None:
                 self.state = self.STATE_HALTED
                 return
-            self.opfunc(self, self.opmode)
+            self.opfunc(self)
