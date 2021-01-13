@@ -208,9 +208,9 @@ class Computer:
                 self.state = self.STATE_HALTED
                 return
             self.opmode = str(self.program[self.ip])[:-2][::-1]
-            num_insts = self.opcodes[self.opcode][self._OP_NINST]
-            self.opmode += '0' * (num_insts - 1 - len(self.opmode))
-            print(f"ip: {self.ip} {self.program[self.ip:self.ip+num_insts]} mode: '{self.opmode}' relbase: {self.relbase}")
+            self.oplen = self.opcodes[self.opcode][self._OP_NINST]
+            self.opmode += '0' * (self.oplen - 1 - len(self.opmode))
+            print(f"ip: {self.ip} {self.program[self.ip:self.ip+self.oplen]} mode: '{self.opmode}' relbase: {self.relbase}")
             self.opfunc = self.opcodes[self.opcode][self._OP_FN]
             if self.opfunc is None:
                 self.state = self.STATE_HALTED
