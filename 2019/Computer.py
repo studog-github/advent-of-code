@@ -211,7 +211,8 @@ class Computer:
             num_insts = self.opcodes[self.opcode][self._OP_NINST]
             self.opmode += '0' * (num_insts - 1 - len(self.opmode))
             print(f"ip: {self.ip} {self.program[self.ip:self.ip+num_insts]} mode: '{self.opmode}' relbase: {self.relbase}")
-            if self.opcodes[self.opcode][self._OP_FN] is None:
+            self.opfunc = self.opcodes[self.opcode][self._OP_FN]
+            if self.opfunc is None:
                 self.state = self.STATE_HALTED
                 return
-            self.opcodes[self.opcode][self._OP_FN](self, self.opmode)
+            self.opfunc(self, self.opmode)
