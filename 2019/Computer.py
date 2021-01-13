@@ -202,16 +202,16 @@ class Computer:
         self.state = self.STATE_RUNNING
         while True:
             print(f'program {self.program}')
-            p_opcode = self.program[self.ip] % 100
-            if p_opcode not in self.opcodes:
-                print(f'ERROR: Unknown opcode {p_opcode} at index {self.ip}, halted')
+            self.opcode = self.program[self.ip] % 100
+            if self.opcode not in self.opcodes:
+                print(f'ERROR: Unknown opcode {self.opcode} at index {self.ip}, halted')
                 self.state = self.STATE_HALTED
                 return
-            p_opmode = str(self.program[self.ip])[:-2][::-1]
-            num_insts = self.opcodes[p_opcode][self._OP_NINST]
-            p_opmode += '0' * (num_insts - 1 - len(p_opmode))
-            print(f"ip: {self.ip} {self.program[self.ip:self.ip+num_insts]} mode: '{p_opmode}' relbase: {self.relbase}")
-            if self.opcodes[p_opcode][self._OP_FN] is None:
+            self.opmode = str(self.program[self.ip])[:-2][::-1]
+            num_insts = self.opcodes[self.opcode][self._OP_NINST]
+            self.opmode += '0' * (num_insts - 1 - len(self.opmode))
+            print(f"ip: {self.ip} {self.program[self.ip:self.ip+num_insts]} mode: '{self.opmode}' relbase: {self.relbase}")
+            if self.opcodes[self.opcode][self._OP_FN] is None:
                 self.state = self.STATE_HALTED
                 return
-            self.opcodes[p_opcode][self._OP_FN](self, p_opmode)
+            self.opcodes[self.opcode][self._OP_FN](self, self.opmode)
