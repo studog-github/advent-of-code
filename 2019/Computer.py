@@ -9,7 +9,6 @@ class Computer:
     # Refactor parameter modes
 
     def addition(self):
-        num_instns = self.opcodes[self.OP_ADD][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         if self.opmode[0] == '0':
             r1 = self.program[r1]
@@ -22,10 +21,8 @@ class Computer:
             r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 + r2
-        self.ip += num_instns
 
     def multiplication(self):
-        num_instns = self.opcodes[self.OP_MULT][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         if self.opmode[0] == '0':
             r1 = self.program[r1]
@@ -38,18 +35,14 @@ class Computer:
             r2 = self.program[r2 + self.relbase]
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 * r2
-        self.ip += num_instns
 
     def poke(self):
-        num_instns = self.opcodes[self.OP_POKE][self._OP_NINST]
         r1 = self.poke_input()
         #print(f'-= poke got {r1}')
         s1 = self.program[self.ip + 1]
         self.program[s1] = r1
-        self.ip += num_instns
         
     def peek(self):
-        num_instns = self.opcodes[self.OP_PEEK][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         if self.opmode[0] == '0':
             r1 = self.program[r1]
@@ -57,10 +50,8 @@ class Computer:
             r1 = self.program[r1 + self.relbase]
         #print(f'= peek returns {r1}')
         self.peek_output(r1)
-        self.ip += num_instns
         
     def jumpiftrue(self):
-        num_instns = self.opcodes[self.OP_JMPT][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         if self.opmode[0] == '0':
             r1 = self.program[r1]
@@ -72,12 +63,9 @@ class Computer:
         elif self.opmode[1] == '2':
             r2 = self.program[r2 + self.relbase]
         if r1 != 0:
-            self.ip = r2
-        else:
-            self.ip += num_instns
+            self.ip = r2 - self.oplen
 
     def jumpiffalse(self):
-        num_instns = self.opcodes[self.OP_JMPF][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         if self.opmode[0] == '0':
             r1 = self.program[r1]
@@ -89,12 +77,9 @@ class Computer:
         elif self.opmode[1] == '2':
             r2 = self.program[r2 + self.relbase]
         if r1 == 0:
-            self.ip = r2
-        else:
-            self.ip += num_instns
+            self.ip = r2 - self.oplen
 
     def lessthan(self):
-        num_instns = self.opcodes[self.OP_LT][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         if self.opmode[0] == '0':
             r1 = self.program[r1]
@@ -110,10 +95,8 @@ class Computer:
             self.program[s1] = 1
         else:
             self.program[s1] = 0
-        self.ip += num_instns
 
     def equals(self):
-        num_instns = self.opcodes[self.OP_EQ][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         if self.opmode[0] == '0':
             r1 = self.program[r1]
@@ -129,13 +112,10 @@ class Computer:
             self.program[s1] = 1
         else:
             self.program[s1] = 0
-        self.ip += num_instns
 
     def chrelbase(self):
-        num_instns = self.opcodes[self.OP_CHRELB][self._OP_NINST]
         r1 = self.program[self.ip + 1]
         self.relbase += r1
-        self.ip += num_instns
 
     OP_ADD = 1
     OP_MULT = 2
@@ -216,3 +196,4 @@ class Computer:
                 self.state = self.STATE_HALTED
                 return
             self.opfunc(self)
+            self.ip += self.oplen
