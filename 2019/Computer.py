@@ -161,7 +161,7 @@ class Computer:
         OP_LT: (lessthan, 4),
         OP_EQ: (equals, 4),
         OP_CHRELB: (chrelbase, 2),
-        OP_HALT: (None, 0),
+        OP_HALT: (None, 1),
     }
 
     STATE_INITED = 0
