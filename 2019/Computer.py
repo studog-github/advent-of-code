@@ -1,3 +1,5 @@
+from libstu import GrowingList
+
 class Computer:
     # Machine operations
 
@@ -121,12 +123,8 @@ class Computer:
         self.peek_output = fout if fout else self.peek_user_output
         self.state = self.STATE_INITED
 
-    # Big memory:
-    # - dict for memory locations
-    # - parse program into memory
-
     def reset(self):
-        self.program = list(self.original_program)
+        self.program = GrowingList(self.original_program, fill_value=0)
         self.ip = 0
         self.relbase = 0
         self.state = self.STATE_RESET
