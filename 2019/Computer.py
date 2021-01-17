@@ -68,7 +68,7 @@ class Computer:
             self.program[s1] = 0
 
     def chrelbase(self):
-        r1 = self.program[self.ip + 1]
+        r1 = self._get_operand(1)
         self.relbase += r1
 
     OP_ADD = 1
