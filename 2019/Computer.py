@@ -137,7 +137,7 @@ class Computer:
     def run(self):
         self.state = self.STATE_RUNNING
         while True:
-            print(f'program {self.program}')
+            #print(f'program {self.program}')
             self.opcode = self.program[self.ip] % 100
             if self.opcode not in self.opcodes:
                 print(f'ERROR: Unknown opcode {self.opcode} at index {self.ip}, halted')
@@ -150,7 +150,7 @@ class Computer:
                 return
             self.oplen = self.opcodes[self.opcode][self._OP_NINST]
             self.opmode = '.' + self.opmode + self.OPMODE_POS * (self.oplen - 1 - len(self.opmode))
-            print(f"ip: {self.ip} {self.program[self.ip:self.ip+self.oplen]} mode: '{self.opmode}' relbase: {self.relbase}")
+            #print(f"ip: {self.ip} {self.program[self.ip:self.ip+self.oplen]} mode: '{self.opmode}' relbase: {self.relbase}")
             self.opfunc = self.opcodes[self.opcode][self._OP_FN]
             if self.opfunc is None:
                 self.state = self.STATE_HALTED
