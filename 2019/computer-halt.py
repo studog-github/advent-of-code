@@ -34,7 +34,7 @@ class computer:
         s1 = self.program[self.ip + 1]
         self.program[s1] = r1
         self.ip += num_instns
-        
+
     def peek(self, mode):
         num_instns = 2
         mode += '0' * (num_instns - 1 - len(mode))
@@ -44,7 +44,7 @@ class computer:
         #print("-= peek returns %d" % r1)
         self.peek_output(r1)
         self.ip += num_instns
-        
+
     def jumpiftrue(self, mode):
         num_instns = 3
         mode += '0' * (num_instns - 1 - len(mode))

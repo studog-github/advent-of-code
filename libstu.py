@@ -36,3 +36,26 @@ def rotate_coords(pos, deg, orig=[0, 0]):
         ny = y
 
     return [nx, ny]
+
+# Inspired by this answer
+# https://stackoverflow.com/a/4544699/1352761
+class GrowingList(list):
+    def __init__(self, *args, fill_value=None):
+        list.__init__(self, *args)
+        self.fill_value = fill_value
+
+    def __verify_size(self, index):
+        if isinstance(index, slice):
+            max_index = index.stop - 1
+        else:
+            max_index = index
+        if max_index >= len(self):
+            self.extend([self.fill_value] * (max_index + 1 - len(self)))
+
+    def __setitem__(self, index, value):
+        self.__verify_size(index)
+        list.__setitem__(self, index, value)
+
+    def __getitem__(self, index):
+        self.__verify_size(index)
+        return list.__getitem__(self, index)
