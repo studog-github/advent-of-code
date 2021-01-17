@@ -6,6 +6,7 @@ class Computer:
     OPMODE_POS = '0'
     OPMODE_IMM = '1'
     OPMODE_REL = '2'
+    OPMODES = OPMODE_POS + OPMODE_IMM + OPMODE_REL
 
     def _get_operand(self, index):
         operand = self.program[self.ip + index]
@@ -139,6 +140,10 @@ class Computer:
                 self.state = self.STATE_HALTED
                 return
             self.opmode = str(self.program[self.ip])[:-2][::-1]
+            if set(self.opmode) - set(self.OPMODES):
+                print(f'ERROR: Unknown opmode {self.opmode} at index {self.ip}, halted')
+                self.state = self.STATE_HALTED
+                return
             self.oplen = self.opcodes[self.opcode][self._OP_NINST]
             self.opmode = '.' + self.opmode + self.OPMODE_POS * (self.oplen - 1 - len(self.opmode))
             print(f"ip: {self.ip} {self.program[self.ip:self.ip+self.oplen]} mode: '{self.opmode}' relbase: {self.relbase}")
