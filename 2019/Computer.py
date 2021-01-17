@@ -8,7 +8,7 @@ class Computer:
     OPMODE_REL = '2'
     OPMODES = OPMODE_POS + OPMODE_IMM + OPMODE_REL
 
-    def _get_operand(self, index):
+    def _get_roperand(self, index):
         operand = self.program[self.ip + index]
         if self.opmode[index] == self.OPMODE_POS:
             operand = self.program[operand]
@@ -17,14 +17,14 @@ class Computer:
         return operand
 
     def addition(self):
-        r1 = self._get_operand(1)
-        r2 = self._get_operand(2)
+        r1 = self._get_roperand(1)
+        r2 = self._get_roperand(2)
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 + r2
 
     def multiplication(self):
-        r1 = self._get_operand(1)
-        r2 = self._get_operand(2)
+        r1 = self._get_roperand(1)
+        r2 = self._get_roperand(2)
         s1 = self.program[self.ip + 3]
         self.program[s1] = r1 * r2
 
@@ -34,24 +34,24 @@ class Computer:
         self.program[s1] = r1
 
     def peek(self):
-        r1 = self._get_operand(1)
+        r1 = self._get_roperand(1)
         self.peek_output(r1)
 
     def jumpiftrue(self):
-        r1 = self._get_operand(1)
-        r2 = self._get_operand(2)
+        r1 = self._get_roperand(1)
+        r2 = self._get_roperand(2)
         if r1 != 0:
             self.ip = r2 - self.oplen
 
     def jumpiffalse(self):
-        r1 = self._get_operand(1)
-        r2 = self._get_operand(2)
+        r1 = self._get_roperand(1)
+        r2 = self._get_roperand(2)
         if r1 == 0:
             self.ip = r2 - self.oplen
 
     def lessthan(self):
-        r1 = self._get_operand(1)
-        r2 = self._get_operand(2)
+        r1 = self._get_roperand(1)
+        r2 = self._get_roperand(2)
         s1 = self.program[self.ip + 3]
         if r1 < r2:
             self.program[s1] = 1
@@ -59,8 +59,8 @@ class Computer:
             self.program[s1] = 0
 
     def equals(self):
-        r1 = self._get_operand(1)
-        r2 = self._get_operand(2)
+        r1 = self._get_roperand(1)
+        r2 = self._get_roperand(2)
         s1 = self.program[self.ip + 3]
         if r1 == r2:
             self.program[s1] = 1
@@ -68,7 +68,7 @@ class Computer:
             self.program[s1] = 0
 
     def chrelbase(self):
-        r1 = self._get_operand(1)
+        r1 = self._get_roperand(1)
         self.relbase += r1
 
     OP_ADD = 1
