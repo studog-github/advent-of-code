@@ -16,21 +16,27 @@ class Computer:
             operand = self.program[operand + self.relbase]
         return operand
 
+    def _get_loperand(self, index):
+        operand = self.program[self.ip + index]
+        if self.opmode[index] == self.OPMODE_REL:
+            operand += self.relbase
+        return operand
+
     def addition(self):
         r1 = self._get_roperand(1)
         r2 = self._get_roperand(2)
-        s1 = self.program[self.ip + 3]
+        s1 = self._get_loperand(3)
         self.program[s1] = r1 + r2
 
     def multiplication(self):
         r1 = self._get_roperand(1)
         r2 = self._get_roperand(2)
-        s1 = self.program[self.ip + 3]
+        s1 = self._get_loperand(3)
         self.program[s1] = r1 * r2
 
     def poke(self):
         r1 = self.poke_input()
-        s1 = self.program[self.ip + 1]
+        s1 = self._get_loperand(1)
         self.program[s1] = r1
 
     def peek(self):
@@ -52,7 +58,7 @@ class Computer:
     def lessthan(self):
         r1 = self._get_roperand(1)
         r2 = self._get_roperand(2)
-        s1 = self.program[self.ip + 3]
+        s1 = self._get_loperand(3)
         if r1 < r2:
             self.program[s1] = 1
         else:
@@ -61,7 +67,7 @@ class Computer:
     def equals(self):
         r1 = self._get_roperand(1)
         r2 = self._get_roperand(2)
-        s1 = self.program[self.ip + 3]
+        s1 = self._get_loperand(3)
         if r1 == r2:
             self.program[s1] = 1
         else:
