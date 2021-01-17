@@ -30,13 +30,11 @@ class Computer:
 
     def poke(self):
         r1 = self.poke_input()
-        #print(f'-= poke got {r1}')
         s1 = self.program[self.ip + 1]
         self.program[s1] = r1
 
     def peek(self):
         r1 = self._get_operand(1)
-        #print(f'= peek returns {r1}')
         self.peek_output(r1)
 
     def jumpiftrue(self):
