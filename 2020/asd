@@ -1,0 +1,21 @@
+42: (b(a(bb|ab)|b((a|b)(a|b)))|a(bbb|a(bb|a(a|b)))) b | (((aa|ab)a|bbb)b|(((a|b)a|bb)a)a) a
+11: 42 31 | 42 11 31
+31: b (b(aba|baa)|a(b(ab|(a|b)a)|a(ba|ab))) | a (b((ab|(a|b)a)b|((a|b)a|bb)a)|a(bab|(ba|bb)a))
+0: 8 11
+8: 42 | 42 8
+
+abbbbbabbbaaaababbaabbbbabababbbabbbbbbabaaaa
+bbabbbbaabaabba
+babbbbaabbbbbabbbbbbaabaaabaaa
+aaabbbbbbaaaabaababaabababbabaaabbababababaaa
+bbbbbbbaaaabbbbaaabbabaaa
+bbbababbbbaaaaaaaabbababaaababaabab
+ababaaaaaabaaab
+ababaaaaabbbaba
+baabbaaaabbaaaababbaababb
+abbbbabbbbaaaababbbbbbaaaababb
+aaaaabbaabaaaaababaa
+aaaabbaaaabbaaa
+aaaabbaabbaaaaaaabbbabbbaaabbaabaaa
+babaaabbbaaabaababbaabababaaab
+aabbbbbaabbbaaaaaabbbbbababaaaaabbaaabba
