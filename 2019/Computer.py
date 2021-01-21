@@ -110,10 +110,12 @@ class Computer:
     STATE_PAUSED = 3
     STATE_HALTED = 4
 
-    def poke_user_input(self):
+    @staticmethod
+    def poke_user_input():
         return int(input('poke needs a number: '))
 
-    def peek_user_output(self, v):
+    @staticmethod
+    def peek_user_output(v):
         print(f'peek: {v}')
 
     # __repr()__ and __str()__ ?
