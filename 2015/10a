@@ -1,0 +1,51 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+import itertools
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+DEFAULT_LOOPS = 40
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    arg_parser.add_argument("-l", "--loops", default=DEFAULT_LOOPS, type=int,
+                            help="number of times to loop (default: %(default)s)", metavar="loops")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    starting_sequence = input.readline().strip()
+
+    sequence = starting_sequence
+    for i in range(args.loops):
+        digits = [''.join(j) for _, j in itertools.groupby(sequence)]
+        #print(digits)
+        new_parts = [str(len(j)) + j[0] for j in digits]
+        #print(new_parts)
+        sequence = ''.join(new_parts)
+        #print(sequence)
+    print(f'Length: {len(sequence)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
