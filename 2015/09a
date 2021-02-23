@@ -1,0 +1,140 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+import itertools
+from copy import deepcopy
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    edges = []
+    cities = {}
+    for line in input:
+        (cityA, _, cityB, _, dist) = line.split()
+        dist = int(dist)
+        edges.append((dist, cityA, cityB))
+        cities.update({cityA: 0, cityB: 0})
+
+    edges = sorted(edges)
+    #pprint(edges)
+    min_path = [math.inf]
+    for edgeset in itertools.combinations(edges, len(cities) - 1):
+        visited = deepcopy(cities)
+        valid_edgeset = True
+        path = [0]
+        for (dist, cityA, cityB) in edgeset:
+            if visited[cityA] >= 2 or visited[cityB] >= 2:
+                valid_edgeset = False
+                break
+            if visited[cityA] == 1 and visited[cityB] == 1:
+                # Might be introducing a loop, check it
+                cur_city = cityA
+                loop_found = True
+                while cur_city != cityB:
+                    for (cur_dist, cur_cityA, cur_cityB) in path[1:]:
+                        if cur_city == cur_cityA:
+                            cur_city = cur_cityB
+                            break
+                        elif cur_city == cur_cityB:
+                            cur_city = cur_cityA
+                            break
+                    if visited[cur_city] == 1:
+                        loop_found = False
+                        break
+                if loop_found:
+                    valid_edgeset = False
+                    break
+            path[0] += dist
+            if path[0] > min_path[0]:
+                valid_edgeset = False
+                break
+            path += [(dist, cityA, cityB)]
+            visited[cityA] += 1
+            visited[cityB] += 1
+        if not valid_edgeset:
+            continue
+        #pprint(path)
+        if path[0] < min_path[0]:
+            min_path = path
+            print(min_path)
+            # Because the edges are sorted, combinations iterator only gives ever-increasing
+            # path lengths, so the first one is the correct one
+            break
+
+    print(f'Shortest path length: {min_path[0]}')
+
+    edges = reversed(edges)
+    #pprint(edges)
+    max_path = [-math.inf]
+    for edgeset in itertools.combinations(edges, len(cities) - 1):
+        visited = deepcopy(cities)
+        valid_edgeset = True
+        path = [0]
+        for (dist, cityA, cityB) in edgeset:
+            if visited[cityA] >= 2 or visited[cityB] >= 2:
+                valid_edgeset = False
+                break
+            if visited[cityA] == 1 and visited[cityB] == 1:
+                # Might be introducing a loop, check it
+                cur_city = cityA
+                loop_found = True
+                while cur_city != cityB:
+                    for (cur_dist, cur_cityA, cur_cityB) in path[1:]:
+                        if cur_city == cur_cityA:
+                            cur_city = cur_cityB
+                            break
+                        elif cur_city == cur_cityB:
+                            cur_city = cur_cityA
+                            break
+                    if visited[cur_city] == 1:
+                        loop_found = False
+                        break
+                if loop_found:
+                    valid_edgeset = False
+                    break
+            path[0] += dist
+            path += [(dist, cityA, cityB)]
+            visited[cityA] += 1
+            visited[cityB] += 1
+        if not valid_edgeset:
+            continue
+        #pprint(path)
+        if path[0] > max_path[0]:
+            max_path = path
+            print(max_path)
+            # Because the edges are sorted, combinations iterator only gives ever-increasing
+            # path lengths, so the first one is the correct one
+            break
+
+    print(f'Longest path length: {max_path[0]}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
