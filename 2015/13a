@@ -1,0 +1,73 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+import itertools
+from copy import deepcopy
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    guests = {}
+    edges = []
+    half_edges = {}
+    for line in input:
+        line = line.strip()[:-1]
+        (guestA, _, sign, happiness, _, _, _, _, _, _, guestB) = line.split(' ')
+        if sign == 'lose':
+            happiness = int(happiness) * -1
+        else:
+            happiness = int(happiness)
+        guests[guestA] = 0
+        guests[guestB] = 0
+        if guestB in half_edges and guestA in half_edges[guestB]:
+            edges.append((half_edges[guestB].pop(guestA) + happiness, guestA, guestB))
+        elif guestA in half_edges:
+            half_edges[guestA].update({guestB: happiness})
+        else:
+            half_edges[guestA] = {guestB: happiness}
+
+    edges = sorted(edges)[::-1]
+    #print(edges)
+    for edgeset in itertools.combinations(edges, len(guests)):
+        visited = deepcopy(guests)
+        valid_edgeset = True
+        path = [0]
+        for (happiness, guestA, guestB) in edgeset:
+            if visited[guestA] >= 2 or visited[guestB] >= 2:
+                valid_edgeset = False
+                break
+            path[0] += happiness
+            path += [(happiness, guestA, guestB)]
+            visited[guestA] += 1
+            visited[guestB] += 1
+        if valid_edgeset:
+            break
+    print(path[0], path)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
