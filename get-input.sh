@@ -54,3 +54,5 @@ curl "https://adventofcode.com/${YEAR}/day/${DAY}/input"  \
     -o "${PADDAY}a-input"  \
     --cookie "$COOKIE_FILE"  \
     --compressed
+
+cp "${THIS_PATH}/blank.py" "${PADDAY}a"

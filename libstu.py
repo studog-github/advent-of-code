@@ -1,4 +1,5 @@
 from copy import deepcopy
+from functools import reduce
 
 def rotate(l, n, d='r'):
     _len = len(l)
@@ -59,3 +60,8 @@ class GrowingList(list):
     def __getitem__(self, index):
         self.__verify_size(index)
         return list.__getitem__(self, index)
+
+# Factorization from
+# https://stackoverflow.com/a/6800214/1352761
+def factors(n):
+    return sorted(set(reduce(list.__add__, ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0))))

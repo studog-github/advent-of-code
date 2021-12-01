@@ -4,6 +4,10 @@ import sys
 import os
 import argparse
 from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
 
 THIS = os.path.basename(sys.argv[0])
 DEFAULT_INPUT = THIS + "-input"
