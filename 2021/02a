@@ -1,0 +1,68 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    steps = [[dir, int(val)] for [dir, val] in (line.strip().split(' ') for line in input)]
+
+    x = 0
+    y = 0
+    for i, [dir, val] in enumerate(steps):
+        if dir == 'forward':
+            x += val
+        elif dir == 'down':
+            y += val
+        elif dir == 'up':
+            y -= val
+        else:
+            print(f'Error: Unknown dir \'{dir}\' in {i}:{steps[i]}')
+    print(f'x:{x} y:{y} x*y:{x*y}')
+
+    x = 0
+    y = 0
+    aim = 0
+    for i, [dir, val] in enumerate(steps):
+        if dir == 'forward':
+            x += val
+            y += aim * val
+        elif dir == 'down':
+            aim += val
+        elif dir == 'up':
+            aim -= val
+        else:
+            print(f'Error: Unknown dir \'{dir}\' in {i}:{steps[i]}')
+    print(f'x:{x} y:{y} x*y:{x*y}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
