@@ -1,0 +1,83 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    lines = []
+    for line in input:
+        lines.append([int(x) for x in ','.join(line.strip().split(' -> ')).split(',')])
+
+    straights = [l for l in lines if l[0] == l[2] or l[1] == l[3]]
+
+    def line_points(start, end):
+        if start[0] > end[0]:
+            dx = -1
+        elif start[0] < end[0]:
+            dx = 1
+        else:
+            dx = 0
+        if start[1] > end[1]:
+            dy = -1
+        elif start[1] < end[1]:
+            dy = 1
+        else:
+            dy = 0
+        p = start
+        while p != end:
+            yield p
+            p = (p[0] + dx, p[1] + dy)
+        yield p
+
+    coords = {}
+    for line in straights:
+        for p in line_points((line[0], line[1]), (line[2], line[3])):
+            if p not in coords:
+                coords[p] = 1
+            else:
+                coords[p] += 1
+    count = sum([1 for p in coords if coords[p] >= 2])
+    print(f'{count} points of overlap at least 2')
+
+    coords = {}
+    for line in lines:
+        for p in line_points((line[0], line[1]), (line[2], line[3])):
+            if p not in coords:
+                coords[p] = 1
+            else:
+                coords[p] += 1
+    count = sum([1 for p in coords if coords[p] >= 2])
+    print(f'{count} points of overlap at least 2')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
