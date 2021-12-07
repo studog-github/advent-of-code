@@ -1,0 +1,85 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    moves = [int(i) for i in input.readline().split(',')]
+
+    card_size = 5
+    numbers = {}
+    card_num = 0
+    cards = []
+    card_states = []
+    while True:
+        if len(input.readline()) == 0:
+            break
+        digits = []
+        for i, line in enumerate(input):
+            digits += [int(d) for d in line.split()]
+            if i == card_size - 1:
+                break
+        cards.append(digits)
+        for i, d in enumerate(digits):
+            # What card it's on, and the row, col position
+            d_info = [card_num, i // card_size, i % card_size]
+            if d not in numbers:
+                numbers[d] = [False, d_info]
+            else:
+                numbers[d].append(d_info)
+        card_num += 1
+        card_states.append([[0] * card_size, [0] * card_size])
+    #pprint(numbers)
+    #pprint(card_states)
+
+    winners = []
+    for m in moves:
+        numbers[m][0] = True
+        for card in numbers[m][1:]:
+            card_states[card[0]][0][card[1]] += 1
+            card_states[card[0]][1][card[2]] += 1
+            if (card_states[card[0]][0][card[1]] == card_size or
+                    card_states[card[0]][1][card[2]] == card_size) and card[0] not in winners:
+                winners += [card[0]]
+                if len(winners) == 1:
+                    unmarked_sum = sum([d for d in cards[winners[0]] if not numbers[d][0]])
+                    print(f'{unmarked_sum * m}')
+                elif len(winners) == len(cards):
+                    unmarked_sum = sum([d for d in cards[winners[-1]] if not numbers[d][0]])
+                    print(f'{unmarked_sum * m}')
+                    break
+        if len(winners) == len(cards):
+            break
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
