@@ -1,0 +1,70 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    positions = [int(t) for t in input.readline().strip().split(',')]
+    #print(f'# positions {len(positions)}')
+    #print(f'# unique {len(set(positions))}')
+    #print(f'min: {min(positions)} max: {max(positions)}')
+
+    weights = Counter(positions)
+    #print(weights)
+
+    last_pos = min(positions) - 1
+    last_cost = math.inf
+    for pos in range(min(positions), max(positions) + 1):
+        cost = sum([abs(crab - pos) * weights[crab] for crab in weights])
+        if cost < last_cost:
+            last_cost = cost
+            last_pos = pos
+        elif cost > last_cost:
+            break
+    print(f'crabs spend {last_cost} fuel to line up on {last_pos}')
+
+    last_pos = min(positions) - 1
+    last_cost = math.inf
+    for pos in range(min(positions), max(positions) + 1):
+        cost = sum([((abs(crab - pos) * (abs(crab - pos) + 1)) // 2) * weights[crab]
+                    for crab in weights])
+        if cost < last_cost:
+            last_cost = cost
+            last_pos = pos
+        elif cost > last_cost:
+            break
+    print(f'crabs guzzle {last_cost} fuel to line up on {last_pos}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
