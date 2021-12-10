@@ -1,0 +1,78 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import deque
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    lines = [line.strip() for line in input]
+
+    mate = {'(': ')', ')': '(', '[': ']', ']': '[', '{': '}', '}': '{', '<': '>', '>': '<'}
+    corrupt_scoring = {')': 3, ']': 57, '}': 1197, '>': 25137}
+    incomplete_scoring = {')': 1, ']': 2, '}': 3, '>': 4}
+
+    corrupt_score = 0
+    incomplete_scores = []
+    for line in lines:
+        stack = deque()
+        corrupted = False
+        for c in line:
+            if c in '([{<':
+                stack.append(c)
+            else:
+                e = stack.pop()
+                if e != mate[c]:
+                    corrupted = True
+                    break
+        print(line, end='')
+        if corrupted:
+            corrupt_score += corrupt_scoring[c]
+            print(f' - Expected {mate[e]}, found {c}, corrupt_score {corrupt_scoring[c]}')
+        elif len(stack):
+            completion = ''
+            iscore = 0
+            while len(stack):
+                completion += mate[stack.pop()]
+                iscore = 5 * iscore + incomplete_scoring[completion[-1]]
+            incomplete_scores.append(iscore)
+            print(f' - Complete by adding {completion}')
+        else:
+            print(' - VALID')
+    if corrupt_score:
+        print(f'Syntax corrupt_score = {corrupt_score}')
+    if len(incomplete_scores):
+        incomplete_scores.sort()
+        print(f'Middle score of incompletes = {incomplete_scores[(len(incomplete_scores)-1)//2]}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
