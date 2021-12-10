@@ -1,0 +1,85 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    height_map = [[int(c) for c in list(line.strip())] for line in input]
+    #pprint(height_map)
+
+    maxx = len(height_map[0])
+    maxy = len(height_map)
+    limits = ((0, maxx), (0, maxy))
+
+    checked = [[False for col in range(maxx)] for row in range(maxy)]
+    low_points = []
+    risk = 0
+    basins = []
+
+    for p in itertools.product(list(range(maxx)), list(range(maxy))):
+        x, y = p
+        if checked[y][x]:
+            continue
+        checked[y][x] = True
+        low_point = True
+        for n in neighbours(p, limits=limits):
+            nx, ny = n
+            if height_map[y][x] >= height_map[ny][nx]:
+                low_point = False
+            else:
+                checked[ny][nx] = True
+        if low_point:
+            low_points.append(p)
+            risk += 1 + height_map[y][x]
+            basin = [p]
+            bseen = {p}
+            bqueue = list(neighbours(p, limits=limits))
+            while len(bqueue):
+                bn = bqueue.pop(0)
+                bseen.add(bn)
+                bnx, bny = bn
+                checked[bny][bnx] = True
+                if height_map[bny][bnx] < 9:
+                    basin.append(bn)
+                    for bnn in neighbours(bn, limits=limits):
+                        if bnn not in bseen and bnn not in bqueue:
+                            bqueue.append(bnn)
+            basins.append(basin)
+                
+    #print(f'low points: {low_points}')
+    print(f'risk: {risk}')
+
+    basins.sort(key=len, reverse=True)
+    print(f'{len(basins[0])} * {len(basins[1])} * {len(basins[2])} = {len(basins[0]) * len(basins[1]) * len(basins[2])}')
+
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

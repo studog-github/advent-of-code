@@ -1,5 +1,6 @@
 from copy import deepcopy
 from functools import reduce
+import itertools
 
 def rotate(l, n, d='r'):
     _len = len(l)
@@ -65,3 +66,17 @@ class GrowingList(list):
 # https://stackoverflow.com/a/6800214/1352761
 def factors(n):
     return sorted(set(reduce(list.__add__, ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0))))
+
+# p is a tuple with 2 or more dimensions
+# limits is a list of boundary (min, max) for each dimension
+def neighbours(p, limits=None, diagonals=False):
+    for n in itertools.product(*[[i-1,i,i+1] for i in p]):
+        # The < check makes neighbours() match range() in behaviour
+        if limits is not None and False in [i[0]<=j<i[1] for i,j in zip(limits, n)]:
+            continue
+        if not diagonals and True not in [i==j for i,j in zip(p, n)]:
+            continue
+        if n == p:
+            # p can't be its own neighbour
+            continue
+        yield n
