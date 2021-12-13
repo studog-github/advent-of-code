@@ -1,0 +1,87 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    dots = set()
+    for line in input:
+        if line.strip() == '':
+            break
+        dots.add(tuple(int(p) for p in line.strip().split(',')))
+    print(dots)
+    folds = []
+    for line in input:
+        d, v = line.strip().split()[2].split('=')
+        folds.append([d, int(v)])
+    print(folds)
+
+    print(f'Starting with {len(dots)} dots visible')
+
+    for d,val in folds:
+        new_dots = set()
+        if d == 'y':
+            for x,y in dots:
+                #print(f'{x},{y} => ', end='')
+                if y > val:
+                    y -= (y - val) * 2
+                #print(f'{x},{y}')
+                new_dots.add((x,y))
+        else:
+            for x,y in dots:
+                if x > val:
+                    x -= (x - val) * 2
+                new_dots.add((x,y))
+        dots = new_dots
+        #print(dots)
+        print(f'{len(dots)} dots are visible')
+
+    maxx = -math.inf
+    maxy = -math.inf
+    for x,y in dots:
+        if x > maxx:
+            maxx = x
+        if y > maxy:
+            maxy = y
+
+    for y in range(maxy + 1):
+        line = ''
+        for x in range(maxx + 1):
+            if (x,y) in dots:
+                line += '#'
+            else:
+                line += '.'
+        print(line)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
