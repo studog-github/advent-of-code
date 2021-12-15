@@ -1,0 +1,88 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+DEFAULT_STEPS = 10
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    arg_parser.add_argument("-s", "--steps", default=DEFAULT_STEPS, type=int,
+                            help="how many steps to run (default: %(default)s)", metavar="steps")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    steps = args.steps
+
+    template = input.readline().strip()
+    print(f'Template: {template}')
+    input.readline()
+    lines = [[k,v] for [k,v] in (line.strip().split(' -> ') for line in input)]
+
+    # Check if the rules are consistent; everything produced is covered by a rule
+    # Construct the rules and counts at the same time
+    rules = {}
+    counts = {}
+    lhss = {k for [k,v] in lines}
+    for s,i in lines:
+        new1 = s[0] + i
+        if new1 not in lhss:
+            print(f'Produced value {new1} not found, from {[s,i]}')
+        counts[s[0]] = 0
+        new2 = i + s[1]
+        if new2 not in lhss:
+            print(f'Produced value {new2} not found, from {[s,i]}')
+        counts[s[1]] = 0
+        rules[s] = [i, new1, new2]
+
+    pairs = {}
+    a = template[0]
+    counts[a] += 1
+    for i in range(1, len(template)):
+        b = template[i]
+        counts[b] += 1
+        pair = a + b
+        pairs[pair] = pairs.get(pair, 0) + 1
+        a = b
+    
+    for s in range(1, steps+1):
+        new_pairs = {}
+        for pair, count in pairs.items():
+            c, p1, p2 = rules[pair]
+            counts[c] += count
+            new_pairs[p1] = new_pairs.get(p1, 0) + count
+            new_pairs[p2] = new_pairs.get(p2, 0) + count
+        pairs = new_pairs
+        print(f'After step {s}: {sum(counts.values())}')
+    print(counts)
+    sc = sorted(counts.values())
+    print(f'{sc[-1]} - {sc[0]} = {sc[-1] - sc[0]}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
