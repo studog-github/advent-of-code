@@ -1,6 +1,8 @@
 from copy import deepcopy
 from functools import reduce
 import itertools
+import math
+import heapq
 
 def rotate(l, n, d='r'):
     _len = len(l)
@@ -80,3 +82,37 @@ def neighbours(p, limits=None, diagonals=False):
             # p can't be its own neighbour
             continue
         yield n
+
+# grid in list-of-rows format
+def dijkstra(grid, start, end=None):
+    maxx = len(grid[0])
+    maxy = len(grid)
+    limits = ((0,maxx),(0,maxy))
+
+    distances = [[math.inf for x in range(maxx)] for y in range(maxy)]
+    prev_node = [[None for x in range(maxx)] for y in range(maxy)]
+    scanned = [[False for x in range(maxx)] for y in range(maxy)]
+
+    sx,sy = start
+    distances[sy][sx] = 0
+
+    nodeq = [(0, start)]
+
+    while len(nodeq) > 0:
+        distance,node = heapq.heappop(nodeq)
+        if end is not None and node == end:
+            break
+        nodex,nodey = node
+        scanned[nodey][nodex] = True
+        node_dist = distances[nodey][nodex]
+        for n in neighbours(node, limits=limits):
+            nx,ny = n
+            if scanned[ny][nx]:
+                continue
+            n_dist = distances[ny][nx]
+            new_n_dist = node_dist + grid[ny][nx]
+            if new_n_dist < n_dist:
+                distances[ny][nx] = new_n_dist
+                prev_node[ny][nx] = node
+                heapq.heappush(nodeq, (new_n_dist, n))
+    return distances, prev_node
