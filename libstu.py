@@ -1,5 +1,6 @@
 from copy import deepcopy
 from functools import reduce
+import math
 
 def rotate(l, n, d='r'):
     _len = len(l)
@@ -65,3 +66,26 @@ class GrowingList(list):
 # https://stackoverflow.com/a/6800214/1352761
 def factors(n):
     return sorted(set(reduce(list.__add__, ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0))))
+
+# Neighbour generator
+def neighbours(x, y, minx=-math.inf, miny=-math.inf, maxx=math.inf, maxy=math.inf):
+    nexty = y + 1
+    prevy = y - 1
+    nextx = x + 1
+    prevx = x - 1
+    if nexty < maxy:
+        if prevx >= minx:
+            yield prevx, nexty
+        yield x, nexty
+        if nextx < maxx:
+            yield nextx, nexty
+    if nextx < maxx:
+        yield nextx, y
+    if prevy >= miny:
+        if nextx < maxx:
+            yield nextx, prevy
+        yield x, prevy
+        if prevx >= minx:
+            yield prevx, prevy
+    if prevx >= minx:
+        yield prevx, y
