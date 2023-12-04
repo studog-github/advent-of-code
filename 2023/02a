@@ -1,0 +1,85 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def parse_colours(line):
+    subsets = []
+    max_dict = { 'red': 0, 'green': 0, 'blue': 0 }
+    for subset in line.strip().split(';'):
+        col_dict = { 'red': 0, 'green': 0, 'blue': 0 }
+        for colour_spec in subset.strip().split(','):
+            num, col = colour_spec.strip().split(' ')
+            num = int(num)
+            col_dict[col] = num
+            if num > max_dict[col]:
+                max_dict[col] = num
+        subsets.append(col_dict)
+    subsets.append(max_dict)
+    #print(subsets)
+    return subsets
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    arg_parser.add_argument("-g", "--game", required=True,
+                            help="specify the game file", metavar="game")
+    args = arg_parser.parse_args()
+
+    # Parse game file
+    game_path = os.path.abspath(args.game)
+    if not os.path.exists(game_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.game))
+        return 1
+
+    game_input = open(game_path, "r")
+    if game_path is None:
+        print("%s: Error: Couldn't open game '%s'" % (THIS, game_path))
+        return 1
+
+    max_rgb = parse_colours(game_input.readline().strip())[0]
+    game_input.close()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    games = []
+    for line in input:
+        games.append(parse_colours(line.split(':')[1]))
+    part_one_sum = 0
+    part_two_sum = 0
+    for i, game in enumerate(games, start=1):
+        if game[-1]['red'] <= max_rgb['red'] and      \
+           game[-1]['green'] <= max_rgb['green'] and  \
+           game[-1]['blue'] <= max_rgb['blue']:
+            part_one_sum += i
+        power = game[-1]['red'] * game[-1]['green'] * game[-1]['blue']
+        part_two_sum += power
+    print(f'Part One: {part_one_sum}')
+    print(f'Part Two: {part_two_sum}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
