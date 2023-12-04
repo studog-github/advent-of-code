@@ -1,0 +1,69 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    total_points = 0
+    card_copies = []
+    for i, line in enumerate(input):
+        line = line.strip()
+        if i < len(card_copies):
+            card_copies[i] += 1
+        else:
+            card_copies.append(1)
+        #print(i, card_copies)
+        numbers = line.split(':')[1].strip()
+        winners, haves = numbers.split('|')
+        winners = set([int(w.strip()) for w in winners.split(' ') if w.strip()])
+        haves = set([int(h.strip()) for h in haves.split(' ') if h.strip()])
+        #print(winners, haves)
+        num_win = 0
+        for have in haves:
+            if have in winners:
+                num_win += 1
+        if num_win == 0:
+            continue
+        total_points += 2**(num_win - 1)
+        for j in range(i + 1, i + 1 + num_win):
+            if j < len(card_copies):
+                card_copies[j] += card_copies[i]
+            else:
+                card_copies.append(card_copies[i])
+            #print(card_copies)
+    print(f'Part One: {total_points}')
+    print(f'Part Two: {sum(card_copies)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
