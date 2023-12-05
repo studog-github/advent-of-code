@@ -1,0 +1,99 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    # Parse first line
+    seeds = [int(seed) for seed in next(input).split(':')[1].split()]
+    #print(seeds)
+
+    next(input)
+
+    def lookup(_items, _map):
+        #indent = '  '
+        #print()
+        _items.sort(key=lambda x: x[-1])
+        #print(indent, _items)
+        _map.sort(key=lambda x: x[1])
+        #print(indent, _map)
+
+        #loop_indent = indent * 2
+
+        # dst_start, src_start, r_len
+        _ranges = iter(_map)
+        dst_start, src_start, r_len = next(_ranges)
+        #print(loop_indent, 'range:', dst_start, src_start, r_len)
+
+        for item in _items:
+            #print(loop_indent, item, end='')
+            src = item[-1]
+            while True:
+                if src_start is None or src < src_start:
+                    item.append(src)
+                    #print(' direct mapping')
+                    break
+                if src_start <= src < src_start + r_len:
+                    item.append(dst_start + (src - src_start))
+                    #print(' offset mapping')
+                    break
+                try:
+                    dst_start, src_start, r_len = next(_ranges)
+                except StopIteration:
+                    src_start = None
+        #print(indent, _items)
+
+    maps = {}
+    for line in input:
+        line = line.strip()
+        if not line:
+            m['ranges'].sort(key=lambda x: x[1])
+            continue
+        if line[-1] == ':':
+            src_name, _, dst_name = line.split()[0].split('-')
+            m = {'dst': dst_name, 'ranges': []}
+            maps[src_name] = m
+            continue
+        # dst_start, src_start, r_len
+        m['ranges'].append([int(i) for i in line.split()])
+    m['ranges'].sort(key=lambda x: x[1])
+    pprint(maps)
+
+    #lookup(seeds, m)
+
+    #seeds.sort(key=lambda x: x[-1])
+    #print(f'Part One: {seeds[0][-1]}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
