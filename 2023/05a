@@ -38,38 +38,32 @@ def main():
 
     next(input)
 
-    def lookup(_items, _map):
-        #indent = '  '
-        #print()
-        _items.sort(key=lambda x: x[-1])
-        #print(indent, _items)
-        _map.sort(key=lambda x: x[1])
-        #print(indent, _map)
-
-        #loop_indent = indent * 2
-
-        # dst_start, src_start, r_len
-        _ranges = iter(_map)
-        dst_start, src_start, r_len = next(_ranges)
-        #print(loop_indent, 'range:', dst_start, src_start, r_len)
-
-        for item in _items:
-            #print(loop_indent, item, end='')
-            src = item[-1]
-            while True:
-                if src_start is None or src < src_start:
-                    item.append(src)
-                    #print(' direct mapping')
+    def lookup(value, map_name, maps, debug=False):
+        log_str = f'{value}:'
+        m = maps[map_name]
+        log_str += f' {m["dst"]}:'
+        while True:
+            # dst_start, src_start, r_len
+            for dst_start, src_start, r_len in m['ranges']:
+                if value < src_start:
+                    # Direct mapping
+                    log_str += f'd{value}'
                     break
-                if src_start <= src < src_start + r_len:
-                    item.append(dst_start + (src - src_start))
-                    #print(' offset mapping')
+                if src_start <= value < src_start + r_len:
+                    # Offset mapping
+                    value = dst_start + (value - src_start)
+                    log_str += f'o{value}'
                     break
-                try:
-                    dst_start, src_start, r_len = next(_ranges)
-                except StopIteration:
-                    src_start = None
-        #print(indent, _items)
+            else:
+                log_str += f'D{value}'
+            if m['dst'] not in maps:
+                break
+            m = maps[m['dst']]
+            log_str += f' {m["dst"]}:'
+
+        if debug:
+            print(log_str)
+        return value
 
     maps = {}
     for line in input:
@@ -85,12 +79,23 @@ def main():
         # dst_start, src_start, r_len
         m['ranges'].append([int(i) for i in line.split()])
     m['ranges'].sort(key=lambda x: x[1])
-    pprint(maps)
+    #pprint(maps)
 
-    #lookup(seeds, m)
+    min_location = math.inf
+    for seed in seeds:
+        location = lookup(seed, 'seed', maps)
+        if location < min_location:
+            min_location = location
+    print(f'Part One: {min_location}')
 
-    #seeds.sort(key=lambda x: x[-1])
-    #print(f'Part One: {seeds[0][-1]}')
+    min_location = math.inf
+    for i in range(0, len(seeds), 2):
+        for seed in range(seeds[i], seeds[i] + seeds[i+1]):
+            print(f'\rrange {i}:{seeds[i]}-{seeds[i]+seeds[i+1]-1} ?{seed}', end='')
+            location = lookup(seed, 'seed', maps)
+            if location < min_location:
+                min_location = location
+    print(f'Part Two: {min_location}')
 
     return 0
 
