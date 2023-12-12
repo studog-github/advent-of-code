@@ -32,38 +32,120 @@ def main():
 
     # Main loop
 
+    def merge_ranges(ranges):
+        if len(ranges) <= 1:
+            return ranges
+        new_ranges = []
+        head = deepcopy(ranges[0])
+        h_start, h_len = head
+        i = 1
+        while i < len(ranges):
+            tail = ranges[i]
+            t_start, t_len = tail
+            if h_start + h_len > t_start:
+                # Maybe this never occurs in the input?
+                print(f'OVERLAPPING RANGES: {head}, {tail}')
+                print(f'       FROM RANGES: {ranges}')
+                raise ValueError
+            if h_start + h_len == t_start:
+                # Merge ranges
+                h_len += t_len
+                head[1] = h_len
+            else:
+                # No merge
+                new_ranges.append(head)
+                head = deepcopy(tail)
+                h_start, h_len = head
+            i += 1
+        new_ranges.append(head)
+        return new_ranges
+
+    def lookup(sources, next_map, maps, debug=False):
+        if debug:
+            pprint(maps)
+            pprint(sources)
+        while next_map in maps:
+            if debug: print(f'Using \'{next_map}\'')
+            m = maps[next_map]
+            m_ranges = iter(m['ranges'])
+            m_dst_start, m_src_start, m_len = next(m_ranges)
+            if debug: print(f'Mapping {[m_dst_start, m_src_start, m_len]}')
+
+            i = 0
+            # Split ranges are inserted into sources, meaning this len() cannot be optimized
+            while i < len(sources):
+                s = sources[i]
+                s_start, s_len = s
+                if debug: print(f'Source {s}', end='')
+                # Python doesn't have redo, so jerry-rig it with a while loop
+                while True:
+                    '''
+                    The source range has two endpoints, each of which can be Before, In or After the
+                    mapping range. This gives 6 cases when considering the combinations:
+                    1: Before, Before
+                    2: Before, In
+                    3: Before, After
+                    4: In, In
+                    5: In, After
+                    6: After, After
+                    '''
+                    # Cases 1, 2, 3
+                    if s_start < m_src_start:
+                        # Case 1
+                        if s_start + s_len - 1 < m_src_start:
+                            if debug: print(f' Case 1')
+                            break
+                        # Convert case 2s => 4s and 3s => 5s by splitting off the non-overlap portion
+                        pre_len = m_src_start - s_start
+                        new_s = [s_start, pre_len]
+                        sources.insert(i, new_s)
+                        i += 1
+                        # Adjust the current range
+                        s[0] = m_src_start
+                        s[1] = s_len - pre_len
+                        s_start, s_len = s
+                        if debug: print(f' Case 2/3 split {new_s}, {s}', end='')
+                        # Fall through
+                    # Cases 4, 5
+                    if s_start < m_src_start + m_len:
+                        # Case 4
+                        if s_start + s_len - 1 < m_src_start + m_len:
+                            s[0] = m_dst_start + (s_start - m_src_start)
+                            if debug: print(f' Case 4, update {s}')
+                            break
+                        # Convert case 5s => 6s by splitting off (and mapping) the overlap portion
+                        pre_len = m_src_start + m_len - s_start
+                        new_s = [m_dst_start + (s_start - m_src_start), pre_len]
+                        sources.insert(i, new_s)
+                        i += 1
+                        # Adjust the current range
+                        s[0] = m_src_start + m_len
+                        s[1] = s_len - pre_len
+                        s_start, s_len = s
+                        if debug: print(f' Case 5 split {new_s}, {s}', end='')
+                        # Fall through
+                    # Case 6
+                    try:
+                        m_dst_start, m_src_start, m_len = next(m_ranges)
+                        if debug:
+                            print(f' Case 6, next\nMapping {[m_dst_start, m_src_start, m_len]}')
+                            print(f'Source {s}', end='')
+                    except StopIteration:
+                        # Skip the rest of the source ranges
+                        if debug: print(f' Case 6')
+                        i = len(sources)
+                        break
+                i += 1
+            sources.sort(key=lambda x: x[0])
+            if debug: pprint(sources)
+            next_map = m['dst']
+        return sources
+
     # Parse first line
     seeds = [int(seed) for seed in next(input).split(':')[1].split()]
     #print(seeds)
 
     next(input)
-
-    def lookup(value, map_name, maps, debug=False):
-        log_str = f'{value}:'
-        m = maps[map_name]
-        log_str += f' {m["dst"]}:'
-        while True:
-            # dst_start, src_start, r_len
-            for dst_start, src_start, r_len in m['ranges']:
-                if value < src_start:
-                    # Direct mapping
-                    log_str += f'd{value}'
-                    break
-                if src_start <= value < src_start + r_len:
-                    # Offset mapping
-                    value = dst_start + (value - src_start)
-                    log_str += f'o{value}'
-                    break
-            else:
-                log_str += f'D{value}'
-            if m['dst'] not in maps:
-                break
-            m = maps[m['dst']]
-            log_str += f' {m["dst"]}:'
-
-        if debug:
-            print(log_str)
-        return value
 
     maps = {}
     for line in input:
@@ -81,21 +163,24 @@ def main():
     m['ranges'].sort(key=lambda x: x[1])
     #pprint(maps)
 
-    min_location = math.inf
-    for seed in seeds:
-        location = lookup(seed, 'seed', maps)
-        if location < min_location:
-            min_location = location
-    print(f'Part One: {min_location}')
+    # Turn all seeds into ranges
+    seed_ranges = [[seed, 1] for seed in seeds]
+    seed_ranges.sort(key=lambda x: x[0])
+    seed_ranges = merge_ranges(seed_ranges)
+    #pprint(seed_ranges)
 
-    min_location = math.inf
+    locations = lookup(seed_ranges, 'seed', maps)
+    print(f'Part One: {locations[0][0]}')
+
+    # Re-interpret seeds as pair-wise ranges
+    seed_ranges = []
     for i in range(0, len(seeds), 2):
-        for seed in range(seeds[i], seeds[i] + seeds[i+1]):
-            print(f'\rrange {i}:{seeds[i]}-{seeds[i]+seeds[i+1]-1} ?{seed}', end='')
-            location = lookup(seed, 'seed', maps)
-            if location < min_location:
-                min_location = location
-    print(f'Part Two: {min_location}')
+        seed_ranges.append([seeds[i], seeds[i+1]])
+    seed_ranges.sort(key=lambda x: x[0])
+    seed_ranges = merge_ranges(seed_ranges)
+    #pprint(seed_ranges)
+    locations = lookup(seed_ranges, 'seed', maps, debug=False)
+    print(f'Part Two: {locations[0][0]}')
 
     return 0
 
