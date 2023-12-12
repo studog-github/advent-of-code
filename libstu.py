@@ -1,6 +1,7 @@
 from copy import deepcopy
 from functools import reduce
 import math
+import fractions
 
 def rotate(l, n, d='r'):
     _len = len(l)
@@ -66,6 +67,11 @@ class GrowingList(list):
 # https://stackoverflow.com/a/6800214/1352761
 def factors(n):
     return sorted(set(reduce(list.__add__, ([i, n//i] for i in range(1, int(n**0.5) + 1) if n % i == 0))))
+
+# lcm from
+# https://stackoverflow.com/a/51716940/1352761
+def lcm(a, b):
+    return a * b // fractions.gcd(a, b)
 
 # Neighbour generator
 def neighbours(x, y, minx=-math.inf, miny=-math.inf, maxx=math.inf, maxy=math.inf):
