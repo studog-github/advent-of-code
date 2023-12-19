@@ -1,0 +1,200 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def dump_map(m):
+    for l in m:
+        print(l)
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    _map = []
+    start = None
+    for line in input:
+        line = line.strip()
+        if not start:
+            x = line.find('S')
+            if x != -1:
+                start = (len(_map), x)
+        _map.append(line)
+    #dump_map(_map)
+    #print(f'Start is at {start}')
+
+    miny = 0
+    minx = 0
+    maxy = len(_map)
+    maxx = len(_map[0])
+
+    pipes_conn_straight = set(('|', '-'))
+    pipes_conn_north = set(('|', 'L', 'J'))
+    pipes_conn_east = set(('-', 'L', 'F'))
+    pipes_conn_south = set(('|', '7', 'F'))
+    pipes_conn_west = set(('-', 'J', '7'))
+
+    potential_ptypes = []
+    headings = []
+
+    # Check north neighbour, if it exists
+    if start[0] > miny:
+        neighb = (start[0] - 1, start[1])
+        ptype = _map[neighb[0]][neighb[1]]
+        if ptype in pipes_conn_south:
+            potential_ptypes.append(pipes_conn_north)
+            headings.append(0)
+    # Check east neighbour, if it exists
+    if start[1] < maxx - 1:
+        neighb = (start[0], start[1] + 1)
+        ptype = _map[neighb[0]][neighb[1]]
+        if ptype in pipes_conn_west:
+            potential_ptypes.append(pipes_conn_east)
+            headings.append(1)
+    # Check south neighbour, if it exists
+    if start[0] < maxy - 1:
+        neighb = (start[0] + 1, start[1])
+        ptype = _map[neighb[0]][neighb[1]]
+        if ptype in pipes_conn_north:
+            potential_ptypes.append(pipes_conn_south)
+            headings.append(2)
+    # Check west neighbour, if it exists
+    if start[1] > minx:
+        neighb = (start[0], start[1] - 1)
+        ptype = _map[neighb[0]][neighb[1]]
+        if ptype in pipes_conn_east:
+            potential_ptypes.append(pipes_conn_west)
+            headings.append(3)
+
+    # Fix up the starting point on the map
+    start_ptype = (potential_ptypes[0] & potential_ptypes[1]).pop()
+    _map[start[0]] = start_ptype.join(_map[start[0]].split('S'))
+    #dump_map(_map)
+
+    pipe_deltas = {
+                    # These are (y, x) deltas, to match the rest of the code
+                    '|': { 0: (-1,  0),              2: ( 1,  0),              },
+                    '-': {              1: ( 0,  1),              3: ( 0, -1), },
+                    'L': { 0: (-1,  0), 1: ( 0,  1)                            },
+                    'J': { 0: (-1,  0),                           3: ( 0, -1), },
+                    '7': {                           2: ( 1,  0), 3: ( 0, -1), },
+                    'F': { 1: ( 0,  1), 2: ( 1,  0)                            },
+                  }
+    heading_deltas = {
+                        '|': { 0:  0,        2:  0,        },
+                        '-': {        1:  0,        3:  0, },
+                        'L': {               2: -1, 3:  1, },
+                        'J': {        1: -1, 2:  1,        },
+                        '7': { 0: -1, 1:  1,               },
+                        'F': { 0:  1,               3: -1, },
+                    }
+
+    # Walk once around, counting turns and steps, marking path as seen
+    # Set the current heading as if the starting square has just been entered from the second
+    # neighbour
+    seen = set()
+    num_steps = 0
+    turns = Counter()
+    _curr_head = (headings[-1] + 2) % 4
+    _curr = start
+    while True:
+        ptype = _map[_curr[0]][_curr[1]]
+        hdelta = heading_deltas[ptype][_curr_head]
+        turns[hdelta] += 1
+        _curr_head = (_curr_head + hdelta) % 4
+        pdelta = pipe_deltas[ptype][_curr_head]
+        _curr = (_curr[0] + pdelta[0], _curr[1] + pdelta[1])
+        num_steps += 1
+        seen.add(_curr)
+        if _curr == start:
+            break
+    print(f'Part One: {num_steps//2}')
+    #print(turns)
+
+    neighbour_deltas = {
+                            0: (-1,  0),
+                            1: ( 0,  1),
+                            2: ( 1,  0),
+                            3: ( 0, -1),
+                       }
+
+    # Number of lefts vs rights, decides the inside vs outside of the loop
+    if turns[1] > turns[-1]:
+        inside = 1
+    else:
+        inside = -1
+
+    # Walk the path again
+    # If a point on the inside is not seen, flood fill, count the points, add them all to seen
+    num_contained = 0
+    while True:
+        #print(f':: {_curr}, {_curr_head}')
+        ptype = _map[_curr[0]][_curr[1]]
+        hdelta = heading_deltas[ptype][_curr_head]
+        if hdelta != inside:
+            nqueue = []
+            # Check inside neighbours
+            # Add right-side neighbour to queue
+            ndelta = neighbour_deltas[(_curr_head + inside) % 4]
+            rneighb = (_curr[0] + ndelta[0], _curr[1] + ndelta[1])
+            nqueue.append(rneighb)
+            #print(f'-= added right {rneighb}')
+            if hdelta != 0:
+                # Add forward neighbour to queue
+                ndelta = neighbour_deltas[_curr_head]
+                lneighb = (_curr[0] + ndelta[0], _curr[1] + ndelta[1])
+                nqueue.append(lneighb)
+                #print(f'-= added left {lneighb}')
+            num_filled = 0
+            while len(nqueue) > 0:
+                n = nqueue.pop(0)
+                #print(f'-= checking {n}, seen? {n in seen}')
+                if n in seen:
+                    continue
+                seen.add(n)
+                num_filled += 1
+                for neighb in neighbours(*n, minx=minx, miny=miny, maxx=maxx, maxy=maxy,
+                                                                                        orthogonal=True):
+                    nqueue.append(neighb)
+                    #print(f'-= added {neighb}')
+            num_contained += num_filled
+        else:
+            #print(f'-= inside turn')
+            pass
+        _curr_head = (_curr_head + hdelta) % 4
+        pdelta = pipe_deltas[ptype][_curr_head]
+        _curr = (_curr[0] + pdelta[0], _curr[1] + pdelta[1])
+        if _curr == start:
+            break
+    print(f'Part Two: {num_contained}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
