@@ -1,0 +1,96 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    def do_hash(s):
+        cur_value = 0
+        for c in s:
+            cur_value = ((cur_value + ord(c)) * 17) % 256
+        return cur_value
+
+    total_results = 0
+    for line in input:
+        cmds = line.strip().split(',')
+        for cmd in cmds:
+            #print(f'HASHing |{cmd}|')
+            total_results += do_hash(cmd)
+    print(f'Part One: {total_results}')
+
+    # The input is only a single line, so cmds is effectively the saved input
+
+    hashmap = dict()
+    for cmd in cmds:
+        #print(cmd)
+        label, op, flen = re.match(r'(\w+)([-=])(\d*)', cmd).groups()
+        if flen:
+            flen = int(flen)
+        #print(label, op, flen)
+        box = do_hash(label)
+        if op == '-':
+            if box in hashmap:
+                for lens in hashmap[box]:
+                    if lens[0] == label:
+                        hashmap[box].remove(lens)
+                        if len(hashmap[box]) == 0:
+                            del hashmap[box]
+                        break
+        elif op == '=':
+            if box not in hashmap:
+                hashmap[box] = [(label, flen)]
+            else:
+                for i, lens in enumerate(hashmap[box]):
+                    if lens[0] == label:
+                        hashmap[box][i] = (label, flen)
+                        break
+                else:
+                    hashmap[box].append((label, flen))
+        else:
+            print(f"BAD OP VALUE '{op}' in '{cmd}'")
+            return -1
+        #pprint(hashmap)
+
+    total_power = 0
+    for box in sorted(hashmap.keys()):
+        #print(f'{box:3}: {hashmap[box]}')
+        for i, lens in enumerate(hashmap[box], start=1):
+            focus_power = (box + 1) * i * lens[1]
+            #print(f'{lens[0]} = {focus_power}')
+            total_power += focus_power
+    print(f'Part Two: {total_power}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
