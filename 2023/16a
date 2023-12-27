@@ -1,0 +1,123 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    _map = []
+    for line in input:
+        _map.append(line.strip())
+    #dump_map(_map)
+
+    minx = 0
+    miny = 0
+    maxx = len(_map[0])
+    maxy = len(_map)
+
+    pos_deltas = {
+                    0: (-1,  0),
+                    1: ( 0,  1),
+                    2: ( 1,  0),
+                    3: ( 0, -1),
+                 }
+
+    heading_deltas = {
+                         '.': { 0: ( 0,   ), 1: ( 0,   ), 2: ( 0,   ), 3: ( 0,   ) },
+                        # Mirrors
+                         '/': { 0: ( 1,   ), 1: (-1,   ), 2: ( 1,   ), 3: (-1,   ) },
+                        '\\': { 0: (-1,   ), 1: ( 1,   ), 2: (-1,   ), 3: ( 1,   ) },
+                        # Splitters
+                         '|': { 0: ( 0,   ), 1: (-1,  1), 2: ( 0,   ), 3: (-1,  1) },
+                         '-': { 0: (-1,  1), 1: ( 0,   ), 2: (-1,  1), 3: ( 0,   ) },
+                     }
+
+    def count_energized(start):
+        pos_queue = []
+        pos_queue.append(start)
+        energized = set()
+        visited = set()
+        while len(pos_queue):
+            # Get next position - ((y, x), heading)
+            _curr, _heading = pos_queue.pop(0)
+            #print(f'-= (({_curr[0]:2}, {_curr[1]:2}), {_heading})', end='')
+
+            # Move to new square based on heading
+            pdelta = pos_deltas[_heading]
+            #print(f' p({pdelta[0]:2}, {pdelta[1]:2}) =>', end='')
+            _curr = (_curr[0] + pdelta[0], _curr[1] + pdelta[1])
+            #print(f' ({_curr[0]:2}, {_curr[1]:2}) :', end='')
+            if (not miny <= _curr[0] < maxy) or (not minx <= _curr[1] < maxx):
+                #print(f' OFF MAP, dropping')
+                continue
+            energized.add(_curr)
+
+            # Update heading; might be multiple new headings!
+            sqtype = _map[_curr[0]][_curr[1]]
+            #print(f' \'{sqtype}\'', end='')
+            hdeltas = heading_deltas[sqtype][_heading]
+            for hdelta in hdeltas:
+                new_pos = (_curr, (_heading + hdelta) % 4)
+                #print(f' h({hdelta:2}) +{new_pos}', end='')
+                if new_pos in visited:
+                    #print(f' LOOP', end='')
+                    pass
+                else:
+                    pos_queue.append((_curr, (_heading + hdelta) % 4))
+                    visited.add(new_pos)
+            #print()
+        return len(energized)
+
+    start = ((0, -1), 1)
+    p1_count = count_energized(start)
+    print(f'Part One: {p1_count}')
+
+    starts = []
+    for x in range(maxx):
+        starts.append(((-1, x), 2))
+    for y in range(maxy):
+        starts.append(((y, maxx), 3))
+    for x in range(maxx - 1, -1, -1):
+        starts.append(((maxy, x), 0))
+    for y in range(maxy - 1, -1, -1):
+        starts.append(((y, -1), 1))
+    #pprint(starts)
+
+    counts = []
+    for start in starts:
+        counts.append(count_energized(start))
+    #pprint(counts)
+    print(f'Part Two: {max(counts)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
