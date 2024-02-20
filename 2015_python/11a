@@ -1,0 +1,111 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    original_pw = list(input.readline().strip())
+    #print(original_pw)
+
+    # Fix any existing disallowed characters
+    first_inc = False
+    next_pw = []
+    for i, c in enumerate(original_pw):
+        if c in 'ilo':
+            # This increment works because there aren't two disallowed letters in a row
+            next_pw += chr(ord(c) + 1)
+            next_pw += 'a' * (len(original_pw) - i - 1)
+            first_inc = True
+            break
+        next_pw += c
+    #print(next_pw)
+
+    #         'abcdefghjkmnpqrstuvwxyz'
+    # becomes  |                     |
+    #         'bcdefghjkmnpqrstuvwxyza'
+    incletLU = { 'a': 'b', 'b': 'c', 'c': 'd', 'd': 'e', 'e': 'f', 'f': 'g', 'g': 'h',
+                 'h': 'j', 'j': 'k', 'k': 'm', 'm': 'n', 'n': 'p', 'p': 'q', 'q': 'r',
+                 'r': 's', 's': 't', 't': 'u', 'u': 'v', 'v': 'w', 'w': 'x', 'x': 'y',
+                 'y': 'z', 'z': 'a' }
+    straights = set(['cba', 'dcb', 'edc', 'fed', 'gfe', 'hgf', 'rqp', 'srq', 'tsr', 'uts',
+                        'vut', 'wvu', 'xwv', 'yxw', 'zyx'])
+
+    # Need to increment once to sync up the 'started' and 'didn't start' with a disallowed
+    # character cases
+    next_pw = next_pw[::-1]
+    #print(f'-= {next_pw}')
+    if not first_inc:
+        for i in range(len(next_pw)):
+            next_pw[i] = incletLU[next_pw[i]]
+            if next_pw[i] != 'a':
+                break
+    while True:
+        #print(f'-= {next_pw}')
+        # check if it's valid
+        pw_is_valid = False
+        pairs = {}
+        i = 0
+        while i < len(next_pw) - 1:
+            if next_pw[i] == next_pw[i + 1]:
+                if next_pw[i] not in pairs:
+                    pairs[next_pw[i]] = True
+                    if len(pairs) == 2:
+                        break
+                i += 2
+            else:
+                i += 1
+
+        if len(pairs) == 2:
+            i = 0
+            while i < len(next_pw) - 2:
+                if next_pw[i] not in 'ab':
+                    if ''.join(next_pw[i:i+3]) in straights:
+                        pw_is_valid = True
+                        break
+                i += 1
+
+        if pw_is_valid:
+            break
+
+        # Increment
+        for i in range(len(next_pw)):
+            next_pw[i] = incletLU[next_pw[i]]
+            if next_pw[i] != 'a':
+                break
+    next_pw = next_pw[::-1]
+
+    next_pw = ''.join(next_pw)
+    original_pw = ''.join(original_pw)
+    print(f'{original_pw}')
+    print(f'{next_pw}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

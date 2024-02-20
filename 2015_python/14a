@@ -1,0 +1,116 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+DEFAULT_SECONDS = 2503
+
+class Reindeer():
+    def __init__(self, dataline):
+        (name, _,_, speed, _,_, flytime, _,_,_,_,_,_, resttime, _) = dataline.split(' ')
+        self.name = name
+        self.speed = int(speed)
+        self.flytime = int(flytime)
+        self.resttime = int(resttime)
+        self.blocktime = self.flytime + self.resttime
+        self.blockdist = self.speed * self.flytime
+
+    def __repr__(self):
+        return f'Reindeer(\'{self.__str__()}\')'
+
+    def __str__(self):
+        return f'{self.name} can fly {self.speed} km/s for {self.flytime} seconds, but then must rest for {self.resttime} seconds.'
+
+    def distance(self, time):
+        dist = (time // self.blocktime) * self.blockdist
+        remainder = time % self.blocktime
+        if remainder < self.flytime:
+            dist += remainder * self.speed
+        else:
+            dist += self.blockdist
+        return dist
+
+    def init_race(self):
+        self.race_points = 0
+        self.race_dist = 0
+        self.flying = True
+        self.action_time = 0
+        self.action_limit = self.flytime
+
+    def step_race(self):
+        if self.flying:
+            self.race_dist += self.speed
+        self.action_time += 1
+        if self.action_time == self.action_limit:
+            self.flying = not self.flying
+            self.action_time = 0
+            if self.flying:
+                self.action_limit = self.flytime
+            else:
+                self.action_limit = self.resttime
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    arg_parser.add_argument("-s", "--seconds", default=DEFAULT_SECONDS, type=int,
+                            help="race duration in seconds (default: %(default)s)",
+                            metavar="seconds")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    race_duration = args.seconds
+
+    # Main loop
+    reindeers = []
+    for line in input:
+        reindeers += [Reindeer(line)]
+    print(f'Race for {race_duration} seconds.')
+
+    max_dist = -math.inf
+    for reindeer in reindeers:
+        name = reindeer.name
+        dist = reindeer.distance(race_duration)
+        print(f'{name} went {reindeer.distance(race_duration)}')
+        if dist > max_dist:
+            max_dist = dist
+            max_name = name
+    print(f'{max_name} went the furthest with {max_dist} meters')
+
+    for reindeer in reindeers:
+        reindeer.init_race()
+
+    for t in range(race_duration):
+        for reindeer in reindeers:
+            reindeer.step_race()
+        reindeers = sorted(reindeers, key=lambda r: r.race_dist, reverse=True)
+        for reindeer in reindeers:
+            if reindeer.race_dist != reindeers[0].race_dist:
+                break
+            reindeer.race_points += 1
+    reindeers = sorted(reindeers, key=lambda r: r.race_points, reverse=True)
+    for r in reindeers:
+        print(f'{r.name:7s}: {r.race_points:4d} {r.race_dist:5d} {str(r.flying):5s} {r.action_time:3d} {r.action_limit:3d}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

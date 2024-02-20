@@ -1,0 +1,195 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def replace_all_once(string, rules, target=None):
+    new_strings = set()
+    for rule in rules:
+        pos = 0
+        while True:
+            pos = string.find(rule, pos)
+            if pos == -1:
+                break
+            for result in rules[rule]:
+                new_string = string[:pos] + result + string[pos + len(rule):]
+                if target and new_string == target:
+                    return set([new_string])
+                new_strings.add(new_string)
+            pos += len(rule)
+    return new_strings
+
+def find_rnar(s):
+    start = None
+    level = 0
+    i = 0
+    while (i < len(s)):
+        frag = s[i:i+2]
+        if frag == 'Rn':
+            if start is None:
+                start = i
+            level += 1
+            i += 2
+        elif frag == 'Ar':
+            level -= 1
+            if level == 0:
+                return start, i
+            i += 2
+        else:
+            i += 1
+    return None, None
+
+def shrink_reduce(s, rules, indent):
+    steps = 0
+    i = 0
+    while i < len(s):
+        j = i + 2
+        while j <= len(s):
+            print(f'{indent}-= Reducing [{s}]')
+            ss = s[i:j]
+            if ss in rules:
+                #print(f'{indent}-= Rule {ss} => {rules[ss]}')
+                s = s[:i] + rules[ss][0] + s[j:]
+                steps += 1
+                j = 2
+            else:
+                j += 1
+        #print(f'{indent}-= Shrunken [{s}]')
+        i += 1
+
+    return (steps, s)
+
+# Non-producting: C Rn Y Ar
+def shrink(s, rules, indent=''):
+    steps = 0
+    print(f'{indent}-= Considering {len(s)}[{s}]')
+    while True:
+        (rnpos, arpos) = find_rnar(s)
+        print(f'{indent}-= found({rnpos, arpos})', end='')
+        if rnpos is None:
+            print()
+            break
+        ss = s[rnpos+2:arpos]
+        print(f' {len(ss)}[{ss}] in {len(s)}[{s}]')
+        (ssteps, ss) = shrink(ss, rules, indent + '  ')
+        steps += ssteps
+        # Add the prefix and Rn Ar
+        ss = s[rnpos:rnpos+2] + ss + s[arpos:arpos+2]
+        p = 1
+        prefix = s[rnpos-p:rnpos]
+        if prefix == 'C':
+            ss = prefix + ss
+            rnpos -= p
+        else:
+            # Extra [] is because of how the input is read in, and forwards vs backwards production
+            while prefix + ss not in rules and prefix not in rules:
+                p += 1
+                prefix = s[rnpos-p:rnpos]
+            # Prefix might have been produced, so needs reducing
+            (ssteps, prefix) = shrink_reduce(prefix, rules, indent)
+            steps += ssteps
+            ss = prefix + ss
+            rnpos -= len(prefix)
+        # Reduce the Rn Ar pair
+        print(f'{indent}-= Rule {ss} => {rules[ss]}')
+        ss = rules[ss][0]
+        steps += 1
+        s = s[:rnpos] + ss + s[arpos+2:]
+        print(f'{indent}-= Shrunk {len(s)}[{s}]')
+
+    # Inner string, reduce it
+    (ssteps, s) = shrink_reduce(s, rules, indent)
+    steps += ssteps
+
+    return (steps, s)
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    productions = {}
+    reductions = {}
+    for line in input:
+        line = line.strip()
+        if line == '':
+            break
+        (molecule, _, result) = line.split(' ')
+        if molecule not in productions:
+            productions[molecule] = [result]
+        else:
+            productions[molecule] += [result]
+        if result not in reductions:
+            reductions[result] = [molecule]
+        else:
+            reductions[result] += [molecule]
+    #pprint(productions)
+    #pprint(reductions)
+
+    medicine = input.readline().strip()
+    #print(medicine)
+
+    new_molecules = replace_all_once(medicine, productions)
+    print(f'New distinct molecules is {len(new_molecules)}')
+
+    (steps, res) = shrink(medicine, reductions)
+    print(f'Number of steps from \'e\': {steps}')
+##    steps = 0
+##    # Tokens C, Rn, Y, Ar are non-expandable; isolate and process
+##    # While there is a Rn, Ar pair, reduce it and accumulate steps
+##    while True:
+##        # Use a regex to locate an inner 'Rn' .. 'Ar' pair and its prefix
+##        start_pos = medicine.find('Rn')
+##        if start_pos == -1:
+##            break
+##        end_pos = medicine.find('Ar')
+##        # Run reduction; success is a xRn...Ar => token (1/2 letters) last step
+##
+##    # Remove Rn/Ar rules?
+##
+##    # Apply remaining reductions
+##    while medicine != 'e':
+##        for reduc, result in reductions:
+##            old_steps = steps
+##            #pos = len(medicine)
+##            while True:
+##                #pos = medicine.rfind(reduc, pos)
+##                pos = medicine.rfind(reduc)
+##                if pos == -1:
+##                    break
+##                print(f'({reduc} => {result}) {medicine} => ', end='')
+##                medicine = medicine[:pos] + result + medicine[pos + len(reduc):]
+##                print(f'{medicine}')
+##                steps += 1
+##            if old_steps != steps:
+##                break
+##    print(f'Number of steps from \'e\': {steps}')
+
+    return 0
+            
+if __name__ == "__main__":
+    sys.exit(main())
