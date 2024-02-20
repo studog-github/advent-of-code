@@ -1,0 +1,65 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+import re
+import json
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def sum_json(j, no_red):
+    total = 0
+    if isinstance(j, list):
+        for child in j:
+            total += sum_json(child, no_red)
+    elif isinstance(j, dict):
+        for k, v in j.items():
+            if no_red and v == 'red':
+                return 0
+            total += sum_json(k, no_red)
+            total += sum_json(v, no_red)
+    elif isinstance(j, int):
+        total += j
+    elif isinstance(j, str):
+        if j[0] in '1234567890-':
+            total += int(j)
+    else:
+        print(f'Unknown structure \'{j}\' ({type(j)})?')
+
+    return total
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    json_data = json.loads(input.readline().strip())
+    #print(json_input)
+
+    total = sum_json(json_data, False)
+    print(total)
+    total = sum_json(json_data, True)
+    print(total)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,64 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+DEFAULT_LITERS = 150
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    arg_parser.add_argument("-l", "--liters", default=DEFAULT_LITERS, type=int,
+                            help="how many liters to store (default: %(default)s)", metavar="liters")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    liters = args.liters
+
+    # Main loop
+    containers = []
+    for line in input:
+        containers += [int(line)]
+    containers.sort()
+    print(containers)
+
+    solutions = []
+    for i in range(1, len(containers) + 1):
+        for container_set in itertools.combinations(containers, i):
+            if sum(container_set) == liters:
+                solutions += [container_set]
+    print(f'There are {len(solutions)} ways:')
+    solutions.sort(key=lambda s: len(s))
+    #print(solutions)
+    num = 0
+    for solution in solutions:
+        if len(solution) > len(solutions[0]):
+            break
+        num += 1
+    print(f'There are {num} ways with {len(solutions[0])} containers:')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

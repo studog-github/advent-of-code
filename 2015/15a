@@ -1,0 +1,128 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+import numpy as np
+import operator
+import functools
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    def tsps_range(num_ingredients, num_tsps, min_tsps=None):
+        def _gen_tsps_range():
+            # Trivial cases
+            if num_ingredients <= 0 or num_tsps < 0:
+                return
+            if num_ingredients == 1:
+                if num_tsps > min_tsps[0]:
+                    yield [num_tsps]
+                return
+            if num_tsps == 0:
+                for tsp in min_tsps:
+                    if tsp > 0:
+                        return
+                yield [num_tsps] * num_ingredients
+                return
+
+            tsps = [0] * num_ingredients
+            tsps[-1] = num_tsps
+            # Store one unneeded value (the non-independent's max) so the condition
+            # in the while loop is simple
+            max_tsps = [num_tsps] * num_ingredients
+
+            #print(f'-- {max_tsps} ', end='')
+            yield tsps
+
+            # Last free column has reached max value, break
+            while tsps[-2] != max_tsps[-2]:
+                tsps[-1] -= 1
+
+                for i in range(len(max_tsps) - 1):
+                    tsps[i] += 1
+                    if tsps[i] <= max_tsps[i]:
+                        break
+                    tsps[i] = 0
+                    if max_tsps[i] > 0:
+                        tsps[-1] += max_tsps[i]
+                        max_tsps[i] -= 1
+                    else:
+                        max_tsps[i] = max_tsps[i + 1]
+                        if max_tsps[i] > 0:
+                            max_tsps[i] -= 1
+
+                #print(f'-- {max_tsps} ', end='')
+                yield tsps
+
+        return _gen_tsps_range()
+
+    # Main loop
+    ingredients = {}
+    for line in input:
+        (name, _, capacity, _, durability, _, flavour, _, texture, _, calories) = line.split(' ')
+        name = name[:-1]
+        capacity = int(capacity[:-1])
+        durability = int(durability[:-1])
+        flavour = int(flavour[:-1])
+        texture = int(texture[:-1])
+        calories = int(calories)
+        ingredients[name] = [capacity, durability, flavour, texture, calories]
+    pprint(ingredients)
+
+    I = np.array([k[:-1] for k in ingredients.values()])
+    pprint(I)
+    C = np.array([k[-1:] for k in ingredients.values()])
+    pprint(C)
+
+    max_score = [-math.inf]
+    max_500_score = [-math.inf]
+    for tspset in tsps_range(len(ingredients), 100):
+        T = np.array(tspset)
+        SI = T @ I
+        #print(f'{T} @ {I} = {SI}')
+        SC = T @ C
+        #print(f'{T} @ {C} = {SC}')
+        calorie_count = sum(SC)
+        score = 1
+        for x, z in np.ndenumerate(SI):
+            #print(f'-= {x, z}')
+            if z <= 0:
+                score = 0
+                break
+            score *= z
+        if score > max_score[0]:
+            max_score = [score, deepcopy(tspset)]
+        if calorie_count == 500 and score > max_500_score[0]:
+            max_500_score = [score, deepcopy(tspset)]
+    print(f'Max score: {max_score[0]} {max_score[1]}')
+    print(f'Max 500 score: {max_500_score[0]} {max_500_score[1]}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,66 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    def decode(match):
+        if match.group(1)[0] != 'x':
+            return match.group(1)
+        c = int(match.group(1)[1:], 16)
+        if 32 <= c <= 126:
+            return chr(c)
+        return '.'
+        #return chr(int(match.group(1)[1:], 16) % 128)
+
+    def encode(match):
+        return '\\' + match.group(0)
+
+    # Main loop
+    num_raw = 0
+    num_decode = 0
+    num_encode = 0
+    dec_pat = re.compile(r'\\(\\|"|x[0-9a-fA-F]{2})')
+    enc_pat = re.compile(r'[\\"]')
+    for i, line in enumerate(input):
+        line = line.strip()
+        num_raw += len(line)
+        dec_line = dec_pat.sub(decode, line[1:-1])
+        num_decode += len(dec_line)
+        enc_line = '"' + enc_pat.sub(encode, line) + '"'
+        num_encode += len(enc_line)
+        print(f'{i}: ({len(line)}){line} =>')
+        print(f'  ({len(dec_line)}){dec_line}')
+        print(f'  ({len(enc_line)}){enc_line}')
+    print(f'decode: {num_raw} - {num_decode} = {num_raw - num_decode}')
+    print(f'encode: {num_encode} - {num_raw} = {num_encode - num_raw}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
