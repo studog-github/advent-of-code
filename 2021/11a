@@ -1,0 +1,92 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+DEFAULT_STEPS = 100
+DEFAULT_INCREMENT = 0
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    arg_parser.add_argument("-s", "--steps", default=DEFAULT_STEPS, type=int,
+                            help="how many steps to run (default: %(default)s)", metavar="steps")
+    arg_parser.add_argument("-i", "--increment", default=DEFAULT_INCREMENT, type=int,
+                            help="print every nth step, 0 to never print (default: %(default)s)",
+                            metavar="increment")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    steps = args.steps
+    increment = args.increment
+
+    octopi = [[int(c) for c in line.strip()] for line in input]
+    if increment:
+        print('Before any steps:')
+        for l in octopi:
+            print(''.join([str(o) for o in l]))
+        print()
+
+    maxx = len(octopi[0])
+    maxy = len(octopi)
+    limits = ((0, maxx), (0, maxy))
+
+    flash_count = 0
+    for step in range(1, steps + 1):
+        flashers = []
+        flashed = set()
+        for p in itertools.product(list(range(maxx)), list(range(maxy))):
+            x, y = p
+            octopi[y][x] += 1
+            if octopi[y][x] > 9:
+                flashers.append(p)
+        while len(flashers) > 0:
+            o = flashers.pop(0)
+            flashed.add(o)
+            flash_count += 1
+            for n in neighbours(o, limits=limits, diagonals=True):
+                if n in flashed or n in flashers:
+                    continue
+                nx, ny = n
+                octopi[ny][nx] += 1
+                if octopi[ny][nx] > 9:
+                    flashers.append(n)
+            x, y = o
+            octopi[y][x] = 0
+
+        if len(flashed) == maxx * maxy:
+            print(f'Synced flash at step {step}')
+
+        if increment and step % increment == 0:
+            print(f'Step: {step} Flashes: {flash_count}')
+            for l in octopi:
+                print(''.join([str(o) for o in l]))
+            print()
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

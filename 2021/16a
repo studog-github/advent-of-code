@@ -1,0 +1,161 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from enum import Enum
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def bits_generator(data):
+    num = yield None
+    bits = ''
+    for c in data:
+        bits += f'{int(c,16):04b}'
+        if len(bits) < num:
+            continue
+        while bits != '' and len(bits) >= num:
+            new_num = yield bits[:num]
+            bits = bits[num:]
+            num = new_num
+    if len(bits) > 0:
+        yield bits
+
+class Packet():
+    class Type(Enum):
+        ADD = 0
+        MULT = 1
+        MIN = 2
+        MAX = 3
+        VALUE = 4
+        GT = 5
+        LT = 6
+        EQ = 7
+
+    class LenType(Enum):
+        BITS = 0
+        NSUBS = 1
+
+    def __init__(self, bits, level=0):
+        self.bits = bits
+        self.level = level
+        self.subpackets = []
+        self.value = 0
+        # Start decode
+        self.version = int(self.bits.send(3),2)
+        self.type = int(self.bits.send(3),2)
+        self.bit_len = 6
+        if self.type == self.Type.VALUE.value:
+            vstr = ''
+            while True:
+                b = self.bits.send(5)
+                self.bit_len += 5
+                vstr += b[1:]
+                if b[0] == '0':
+                    break
+            self.value = int(vstr,2)
+        else:
+            self.len_type = int(self.bits.send(1))
+            self.bit_len += 1
+            self.subbit_len = 0
+            if self.len_type == self.LenType.BITS.value:
+                self.len_len = int(self.bits.send(15),2)
+                self.bit_len += 15
+                while self.subbit_len < self.len_len:
+                    subpacket = Packet(self.bits, level+1)
+                    self.subbit_len += subpacket.bit_len
+                    self.subpackets.append(subpacket)
+                self.bit_len += self.subbit_len
+            else:
+                self.len_num = int(self.bits.send(11),2)
+                self.bit_len += 11
+                while len(self.subpackets) < self.len_num:
+                    subpacket = Packet(self.bits, level+1)
+                    self.subbit_len += subpacket.bit_len
+                    self.subpackets.append(subpacket)
+                self.bit_len += self.subbit_len
+            if self.type == self.Type.ADD.value:
+                self.value = sum(p.value for p in self.subpackets)
+            elif self.type == self.Type.MULT.value:
+                self.value = 1
+                for p in self.subpackets:
+                    self.value *= p.value
+            elif self.type == self.Type.MIN.value:
+                self.value = min(p.value for p in self.subpackets)
+            elif self.type == self.Type.MAX.value:
+                self.value = max(p.value for p in self.subpackets)
+            elif self.type == self.Type.GT.value:
+                if self.subpackets[0].value > self.subpackets[1].value:
+                    self.value = 1
+                else:
+                    self.value = 0
+            elif self.type == self.Type.LT.value:
+                if self.subpackets[0].value < self.subpackets[1].value:
+                    self.value = 1
+                else:
+                    self.value = 0
+            elif self.type == self.Type.EQ.value:
+                if self.subpackets[0].value == self.subpackets[1].value:
+                    self.value = 1
+                else:
+                    self.value = 0
+            else:
+                raise ValueError(f'Unknown type \'{self.type}\'')
+
+    def __repr__(self):
+        rstr = '    ' * self.level + f'Packet v{self.version}'
+        rstr += f' {self.Type(self.type).name}({self.type}) {self.value}'
+        if self.type != self.Type.VALUE.value:
+            rstr += f' [{self.len_type}'
+            if self.len_type == self.LenType.BITS.value:
+                rstr += f',{self.len_len}]'
+            else:
+                rstr += f',{self.len_num}]'
+            for packet in self.subpackets:
+                rstr += f'\n{packet}'
+        return rstr
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    line = input.readline().strip()
+    bits = bits_generator(line)
+    bits.__next__()
+    packet = Packet(bits)
+    print(packet)
+
+    vsum = 0
+    packetq = [packet]
+    while len(packetq) > 0:
+        p = packetq.pop(0)
+        vsum += p.version
+        packetq += p.subpackets
+    print(f'vsum {vsum}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

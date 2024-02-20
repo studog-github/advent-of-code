@@ -1,0 +1,86 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    displays = [[[''.join(sorted(s)) for s in p.split()] for p in line.strip().split(' | ')] for line in input]
+
+    uniques = [n for d in displays for n in d[1] if len(n) in [2, 3, 4, 7]]
+    print(f'num_uniques = {len(uniques)}')
+
+    def decode(display):
+        fives = []
+        sixes = []
+        digits = {}
+        for i in display[0]:
+            if len(i) == 2:
+                digits[i] = '1'
+                one = set(i)
+            elif len(i) == 3:
+                digits[i] = '7'
+            elif len(i) == 4:
+                digits[i] = '4'
+                four = set(i)
+            elif len(i) == 7:
+                digits[i] = '8'
+                eight = set(i)
+            elif len(i) == 5:
+                fives.append(i)
+            else:
+                sixes.append(i)
+        for i in sixes:
+            if len(set(i) & one) != len(one):
+                digits[i] = '6'
+                six = set(i)
+            elif len(eight - set(i) - four) == 0:
+                digits[i] = '0'
+            else:
+                digits[i] = '9'
+        c = eight - six
+        for i in fives:
+            if len(set(i) & one) == len(one):
+                digits[i] = '3'
+            elif len(set(i) & c) == 1:
+                digits[i] = '2'
+            else:
+                digits[i] = '5'
+
+        return int(''.join([digits[i] for i in display[1]]))
+
+    values = [decode(d) for d in displays]
+    print(values)
+    print(f'sum of displays {sum(values)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

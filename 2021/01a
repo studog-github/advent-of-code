@@ -1,0 +1,52 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    depths = [int(line.split(' ')[0]) for line in input]
+
+    increases = 0
+    for i in range(1, len(depths)):
+        if depths[i] > depths[i - 1]:
+            increases += 1
+    print(f'# increases: {increases}')
+
+    window_increases = 0
+    for i in range(3, len(depths)):
+        if sum(depths[i - 2:i + 1]) > sum(depths[i - 3:i]):
+            window_increases += 1
+    print(f'# window increases: {window_increases}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
