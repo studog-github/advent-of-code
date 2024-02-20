@@ -1,0 +1,138 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    def msg_match(rules, message, target_rule=None):
+        print(f'-= msg_match(_, {message}, {target_rule})')
+        if target_rule is None:
+            target_rule = 0
+        match, length = msg_match_recurse(rules, message, target_rule)
+        if match and length == len(message):
+            print(f'-= msg_match(_, {message}, {target_rule}): matched, full string matched')
+            return True
+        print(f'-= msg_match(_, {message}, {target_rule}): matched, full string FAILED')
+        return False
+
+    def msg_match_recurse(rules, message, target_rule, depth=0, indent='    '):
+        print(f'{indent}-= msg_match_recurse(_, {message}, {target_rule})')
+        if message == '':
+            return False, 0
+        rule = rules[target_rule]
+        if rule == 'a' or rule == 'b':
+            if message[0] == rule:
+                print(f'{indent}-= rule: {rule}: matched')
+                return True, 1
+            print(f'{indent}-= rule: {rule}: FAILED')
+            return False, 0
+        if target_rule in rules['has_loop']:
+            loop_part = rule[rules['has_loop']]
+            print(f'{indent}-= trying loop_part: {loop_part}')
+            for and_part in loop_part:
+                print(f'{indent}  -= trying and_part: {and_part}')
+                match, length = msg_match(rules, message[idx:], and_part, depth + 1, indent + '    ')
+                if not match:
+                    break
+            
+
+
+    def msg_match(rules, message, target_rule=None, indent=''):
+        # Try all the or_parts until one succeeds
+        for or_part in rule:
+            print(f'{indent}-= trying or_part: {or_part}')
+            # Try all the or_parts until all succeed
+            idx = 0
+            for and_part in or_part:
+                print(f'{indent}  -= trying and_part: {and_part}')
+                match, length = msg_match(rules, message[idx:], and_part, indent + '    ')
+                if not match:
+                    print(f'{indent}  -= trying and_part: {and_part}: FAILED')
+                    break
+                print(f'{indent}  -= trying and_part: {and_part}: matched')
+                idx += length
+            if match:
+                if top_level:
+                    if idx == len(message):
+                        print(f'{indent}-= trying or_part: {or_part}: matched, full string matched')
+                        return True
+                    else:
+                        continue
+                else:
+                    print(f'{indent}-= trying or_part: {or_part}: matched')
+                    return True, idx
+
+        if top_level:
+            print(f'{indent}-= trying or_part: {or_part}: matched, full string FAILED')
+            return False
+        else:
+            print(f'{indent}-= trying or_part: {or_part}: FAILED')
+            return False, 0
+
+
+    rules = {}
+    rules['has_loop'] = {}
+    for line in input:
+        line = line.strip()
+        if line == '':
+            break
+        rule_idx, rule_text = line.split(': ')
+        rule_idx = int(rule_idx)
+        if '"' in rule_text:
+            rule_text = rule_text.replace('"', '')
+        else:
+            rule_text = rule_text.split(' | ')
+            for i, val in enumerate(rule_text):
+                rule_text[i] = [int(i) for i in val.split(' ')]
+                if rule_idx in rule_text[i]:
+                    rules['has_loop'][rule_idx] = i
+        rules[rule_idx] = rule_text
+    pprint(rules)
+
+    num_match_0 = 0
+    for message in input:
+        message = message.strip()
+        print(f'-----------------------------------------------')
+        print(f'{message}')
+        print(f'-----------------------------------------------')
+        if msg_match(rules, message):
+            print(f'-----------------------------------------------')
+            print(f'{message} matched')
+            print(f'-----------------------------------------------')
+            num_match_0 += 1
+        else:
+            print(f'-----------------------------------------------')
+            print(f'{message} FAILED')
+            print(f'-----------------------------------------------')
+    print(f'A: Messages matching Rule 0: {num_match_0}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
