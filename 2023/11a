@@ -1,0 +1,101 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def dump_map(m):
+    for l in m:
+        print(l)
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    _map = []
+    galaxies = []
+    rows = set()
+    cols = set()
+    for line in input:
+        line = line.strip()
+        gal_idxs = [i for i, g in enumerate(line) if g == '#']
+        for gal_idx in gal_idxs:
+            galaxies.append((len(_map), gal_idx))
+            rows.add(len(_map))
+            cols.add(gal_idx)
+        _map.append(line)
+    #dump_map(_map)
+    #print(f'{len(galaxies)}: {galaxies}')
+
+    minx = 0
+    miny = 0
+    maxx = len(_map[0])
+    maxy = len(_map)
+
+    expand_rows = sorted(set(range(maxy)) - rows)
+    expand_cols = sorted(set(range(maxx)) - cols)
+    #print(expand_rows)
+    #print(expand_cols)
+
+    distances = []
+    for a, b in itertools.combinations(galaxies, 2):
+        #print(f'{a} - {b}:', end='')
+        if b[1] < a[1]:
+            _a = (a[0], b[1])
+            _b = (b[0], a[1])
+            a = _a
+            b = _b
+        distance = (b[0] - a[0]) + (b[1] - a[1])
+        expands = 0
+        for er in expand_rows:
+            if a[0] < er < b[0]:
+                #print(f' r{er}', end='')
+                expands += 1
+        for ec in expand_cols:
+            if a[1] < ec < b[1]:
+                #print(f' c{ec}', end='')
+                expands += 1
+        #print(f' = {distance}')
+        distances.append((distance, expands))
+    part_one_distance = 0
+    ex_one_distance = 0
+    ex_two_distance = 0
+    part_two_distance = 0
+    for d, e in distances:
+        part_one_distance += d + e * 1
+        ex_one_distance += d + e * 9
+        ex_two_distance += d + e * 99
+        part_two_distance += d + e * 999_999
+    print(f'Part One: {part_one_distance}')
+    print(f'Ex One: {ex_one_distance}')
+    print(f'Ex Two: {ex_two_distance}')
+    print(f'Part Two: {part_two_distance}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

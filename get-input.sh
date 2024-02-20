@@ -55,6 +55,6 @@ curl "https://adventofcode.com/${YEAR}/day/${DAY}/input"  \
     --cookie "$COOKIE_FILE"  \
     --compressed
 
-if [ ! -f "${PADDAY}a" ]; then
+if [[ ! -f "${PADDAY}a" ]]; then
     cp "${THIS_PATH}/blank.py" "${PADDAY}a"
 fi

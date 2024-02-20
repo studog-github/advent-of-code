@@ -1,0 +1,82 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+import re
+import functools
+import operator
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    directions = input.readline().strip()
+    #print(directions)
+
+    input.readline()
+
+    nodes = {}
+    starting_nodes = []
+    for line in input:
+        node, left, right = re.findall(r'\w{3}', line)
+        nodes[node] = (left, right)
+        nodes[node] = {'L': left, 'R': right}
+        if node[-1] == 'A':
+            starting_nodes.append(node)
+    #pprint(nodes)
+    #print(starting_nodes)
+
+    dir_len = len(directions)
+
+    if 'AAA' not in starting_nodes:
+        print(f'Part One: <does not contain \'AAA\'>')
+    else:
+        num_steps = 0
+        node = 'AAA'
+        while node != 'ZZZ':
+            node = nodes[node][directions[num_steps % dir_len]]
+            num_steps += 1
+        print(f'Part One: {num_steps}')
+
+    cycle_steps = []
+    for node in starting_nodes:
+        num_steps = 0
+        while node[-1] != 'Z':
+            node = nodes[node][directions[num_steps % dir_len]]
+            num_steps += 1
+        cycle_steps.append(num_steps)
+        #print(cycle_steps)
+    #for steps in cycle_steps:
+        #print(factors(steps))
+    print(f'Part Two: {functools.reduce(lcm, cycle_steps, 1)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

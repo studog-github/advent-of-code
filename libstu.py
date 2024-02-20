@@ -2,6 +2,7 @@ from copy import deepcopy
 from functools import reduce
 import itertools
 import math
+import fractions
 import heapq
 
 def rotate(l, n, d='r'):
@@ -71,7 +72,7 @@ def factors(n):
 
 # p is a tuple with 2 or more dimensions
 # limits is a list of boundary (min, max) for each dimension
-def neighbours(p, limits=None, diagonals=False):
+def neighbours_a(p, limits=None, diagonals=False):
     for n in itertools.product(*[[i-1,i,i+1] for i in p]):
         # The < check makes neighbours() match range() in behaviour
         if limits is not None and False in [i[0]<=j<i[1] for i,j in zip(limits, n)]:
@@ -116,3 +117,36 @@ def dijkstra(grid, start, end=None):
                 prev_node[ny][nx] = node
                 heapq.heappush(nodeq, (new_n_dist, n))
     return distances, prev_node
+
+# lcm from
+# https://stackoverflow.com/a/51716940/1352761
+def lcm(a, b):
+    return a * b // fractions.gcd(a, b)
+
+# Neighbour generator
+def neighbours_b(x, y, minx=-math.inf, miny=-math.inf, maxx=math.inf, maxy=math.inf, orthogonal=False):
+    nexty = y + 1
+    prevy = y - 1
+    nextx = x + 1
+    prevx = x - 1
+    if nexty < maxy:
+        if not orthogonal and prevx >= minx:
+            yield prevx, nexty
+        yield x, nexty
+        if not orthogonal and nextx < maxx:
+            yield nextx, nexty
+    if nextx < maxx:
+        yield nextx, y
+    if prevy >= miny:
+        if not orthogonal and nextx < maxx:
+            yield nextx, prevy
+        yield x, prevy
+        if not orthogonal and prevx >= minx:
+            yield prevx, prevy
+    if prevx >= minx:
+        yield prevx, y
+
+# Dump a map
+def dump_map(m):
+    for l in m:
+        print(l)

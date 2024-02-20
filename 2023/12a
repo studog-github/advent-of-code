@@ -1,0 +1,167 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+import functools
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+INDENT = ''
+INDENT_PAD = '  '
+INDENT_PAD_LEN = len(INDENT_PAD)
+def _inc_indent():
+    global INDENT
+    global INDENT_PAD
+    INDENT += INDENT_PAD
+def _dec_indent():
+    global INDENT
+    global INDENT_PAD_LEN
+    INDENT = INDENT[:-INDENT_PAD_LEN]
+def iprint(s):
+    print(f'{INDENT}{s}')
+
+@functools.lru_cache(maxsize=None)
+def _find_arranges(pattern, blocks):
+    global bidxs
+    #iprint(f'>> \'{pattern}\', {blocks}')
+    _inc_indent()
+
+    b_len = len(blocks)
+    if b_len == 0:
+        if pattern and '#' in pattern:
+            # pattern has remaining spots that must be assigned to a block, but out of blocks
+            #iprint(f'FAIL fixed blocks remain in {pattern}')
+            _dec_indent()
+            return 0
+        #iprint(f'FOUND 1 arrangement')
+        dump_arrangement()
+        _dec_indent()
+        return 1
+
+    rb_size = sum(blocks) + b_len - 1
+    p_len = len(pattern)
+    if p_len < rb_size:
+        # blocks left to assign but out of pattern
+        #iprint(f'FAIL out of pattern, {pattern} for {blocks}')
+        _dec_indent()
+        return 0
+
+    bsize = blocks[0]
+    #iprint(f'rb_size {rb_size} bsize {bsize}')
+
+    n_arrangements = 0
+    for i in range(p_len - rb_size + 1):
+        if i > 0 and pattern[i-1] == '#':
+            #iprint(f'i: {i} FAIL no break before at {i-1} in {pattern[i-1:i+bsize+1]}')
+            # Nothing can be successful from here on
+            _dec_indent()
+            return n_arrangements
+        if '.' in pattern[i:i+bsize]:
+            #iprint(f'i: {i} FAIL . in {pattern[i:i+bsize]}')
+            continue
+        if i+bsize < len(pattern) and pattern[i+bsize] == '#':
+            #iprint(f'i: {i} FAIL no break after at {i+bsize} in {pattern[i:i+bsize+1]}')
+            continue
+        #iprint(f'i: {i}')
+        bidxs.append([i, bsize])
+        j = i + bsize + 1
+        while j < p_len:
+            if pattern[j] != '.':
+                break
+            j += 1
+        bidxs.append([j, 0])
+        #iprint(f'before bidxs: {bidxs}')
+        n_arrangements += _find_arranges(pattern[j:], blocks[1:])
+        bidxs.pop()
+        bidxs.pop()
+        #iprint(f' after bidxs: {bidxs}')
+        #iprint(f'n_arrs: {n_arrangements}')
+    _dec_indent()
+    return n_arrangements
+
+full_pattern = None
+bidxs = []
+def dump_arrangement():
+    global full_pattern
+    global bidxs
+    #iprint(f'FOUND \'{full_pattern}\', {bidxs}')
+    display_pattern = [' '] * len(full_pattern)
+    k = 0
+    for idx, size in bidxs:
+        if size == 0:
+            # offset to next block
+            k += idx
+            continue
+        l = k + idx
+        display_pattern[l:l+size] = '^' * size
+    display_pattern = ''.join(display_pattern)
+    #iprint(f'      \'{display_pattern}\'')
+
+def find_arrangements(pattern, blocks):
+    #print(f'++ \'{pattern}\', {blocks}')
+    global full_pattern
+    global bidxs
+    full_pattern = pattern
+    bidxs = []
+
+    # trim leading '.'s
+    i = 0
+    while i < len(pattern):
+        if pattern[i] != '.':
+            break
+        i += 1
+    bidxs.append([i, 0])
+    return _find_arranges(pattern[i:], blocks)
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+    lines = []
+    total_arranges = 0
+    for line in input:
+        pattern, counts = line.split()
+        counts = tuple(int(i) for i in counts.split(','))
+        lines.append([pattern, counts])
+        #print(pattern, len(pattern), counts)
+        num_arranges = find_arrangements(pattern, counts)
+        total_arranges += num_arranges
+        #print(f'++ {num_arranges} :: {total_arranges}')
+    print(f'Part One: {total_arranges}')
+
+    total_arranges = 0
+    for pattern, counts in lines:
+        pattern = '?'.join([pattern] * 5)
+        counts *= 5
+        #print(pattern, len(pattern), counts)
+        num_arranges = find_arrangements(pattern, counts)
+        total_arranges += num_arranges
+    print(f'Part Two: {total_arranges}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

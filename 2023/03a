@@ -1,0 +1,100 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    schematic = []
+    part_numbers = []
+    symbol_list = []
+    for line in input:
+        line = line.strip()
+        sch_line = []
+        i = 0
+        while i < len(line):
+            if line[i] == '.':
+                sch_line.append(line[i])
+                i += 1
+                continue
+
+            if line[i].isdigit():
+                part_num_idx = len(part_numbers)
+                sch_line.append(part_num_idx)
+                j = i + 1
+                while j < len(line) and line[j].isdigit():
+                    sch_line.append(part_num_idx)
+                    j += 1
+                part_numbers.append([int(line[i:j]), False])
+                i = j
+                continue
+
+            # Symbol
+            sch_line.append(line[i])
+            # NOTE: (y, x)
+            symbol_list.append([len(schematic), i])
+            i += 1
+        schematic.append(sch_line)
+    #pprint(schematic)
+    #pprint(part_numbers)
+    #pprint(symbol_list)
+
+    for y, x in symbol_list:
+        #print((x, y))
+        for neighbour in neighbours(x, y, minx=0, miny=0, maxx=len(schematic[0]), maxy=len(schematic)):
+            #print('  ', (neighbour[0], neighbour[1]), schematic[neighbour[1]][neighbour[0]])
+            if not isinstance(schematic[neighbour[1]][neighbour[0]], int):
+                continue
+            part_numbers[schematic[neighbour[1]][neighbour[0]]][1] = True
+    #pprint(part_numbers)
+    print(f'Part One: {sum([pn for pn, ispn in part_numbers if ispn])}')
+
+    ratios = []
+    for y, x in symbol_list:
+        if schematic[y][x] != '*':
+            continue
+        numbers_found = set()
+        for neighbour in neighbours(x, y, minx=0, miny=0, maxx=len(schematic[0]), maxy=len(schematic)):
+            if not isinstance(schematic[neighbour[1]][neighbour[0]], int):
+                continue
+            numbers_found.add(schematic[neighbour[1]][neighbour[0]])
+        if len(numbers_found) != 2:
+            continue
+        ratio = 1
+        for n in numbers_found:
+            ratio *= part_numbers[n][0]
+        ratios.append(ratio)
+    print(f'Part Two: {sum(ratios)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

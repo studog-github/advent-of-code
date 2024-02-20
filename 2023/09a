@@ -1,0 +1,83 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def extrapolate(history):
+    subseq = list(history)
+    extrap = subseq[-1]
+    subseq_set = set(subseq)
+    #print(len(subseq_set), subseq)
+    while len(subseq_set) > 1:
+        subseq = [b-a for a, b in zip(subseq, subseq[1:])]
+        extrap += subseq[-1]
+        subseq_set = set(subseq)
+        #print(len(subseq_set), subseq)
+    #print(extrap)
+    return extrap
+
+def prextrapolate(history):
+    subseq = list(history)
+    extrap = subseq[0]
+    toggle = -1
+    subseq_set = set(subseq)
+    #print(len(subseq_set), subseq)
+    #print(extrap)
+    while len(subseq_set) > 1:
+        subseq = [b-a for a, b in zip(subseq, subseq[1:])]
+        extrap += subseq[0] * toggle
+        toggle *= -1
+        subseq_set = set(subseq)
+        #print(len(subseq_set), subseq)
+        #print(extrap)
+    #print(extrap)
+    return extrap
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    histories = []
+    for line in input:
+        histories.append([int(e) for e in line.split()])
+
+    extrapolations = []
+    for history in histories:
+        extrapolations.append(extrapolate(history))
+    print(f'Part One: {sum(extrapolations)}')
+
+    prextrapolations = []
+    for history in histories:
+        prextrapolations.append(prextrapolate(history))
+    print(f'Part Two: {sum(prextrapolations)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

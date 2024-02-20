@@ -1,0 +1,164 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def dump_board(board):
+    for l in board:
+        print(''.join(l))
+
+def dump_boards(*args):
+    for l in zip(*args):
+        print('|  |'.join([''.join(e) for e in l]))
+
+def transpose(board):
+    return [list(b) for b in zip(*board)]
+
+def flip(board):
+    return [list(reversed(b)) for b in board]
+
+def tilt(board, _dir):
+    if _dir == 0:
+        board = transpose(board)
+    elif _dir == 1:
+        board = flip(board)
+    elif _dir == 2:
+        board = flip(transpose(board))
+    elif _dir == 3:
+        board = deepcopy(board)
+    else:
+        print(f'INVALID TILT DIRECTION!!')
+        return None
+
+    for line in board:
+        #print(f'-= {line}')
+        empty = None
+        for i in range(len(line)):
+            # Set the empty pointer to the next empty spot
+            if empty is None:
+                if line[i] == '.':
+                    empty = i
+                    #print(f'-= empty set to {empty}')
+                continue
+            # Reset the empty pointer; the previous location is now inaccessible
+            if line[i] == '#':
+                empty = None
+                #print(f'-= empty cleared by {i}')
+                continue
+            # Found a rock, move it west
+            if line[i] == 'O':
+                line[empty], line[i] = line[i], line[empty]
+                #print(f'-= {line} => moved {i} to {empty}')
+                # Find the next empty spot
+                for j in range(empty + 1, len(line)):
+                    if line[j] == '.':
+                        empty = j
+                        #print(f'-= empty now {empty}')
+                        break
+    if _dir == 0:
+        board = transpose(board)
+    elif _dir == 1:
+        board = flip(board)
+    elif _dir == 2:
+        board = transpose(flip(board))
+    elif _dir == 3:
+        pass
+
+    return board
+
+def calc_load(board):
+    total = 0
+    for i, line in enumerate(board):
+        total += Counter(line)['O'] * (len(board) - i)
+    return total
+
+def diff_boards(a, b):
+    diff_board = []
+    for i in range(len(a)):
+        diff_line = []
+        for j in range(len(a[i])):
+            if a[i][j] == b[i][j]:
+                diff_line.append('_')
+            else:
+                diff_line.append('X')
+        diff_board.append(diff_line)
+    dump_boards(a, diff_board, b)
+    print()
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    board = []
+    for line in input:
+        board.append(list(line.strip()))
+    #print(board)
+
+    tilted = tilt(board, 0)
+    #dump_board(board)
+    #print()
+    #dump_board(tilted)
+    total_load = calc_load(tilted)
+    print(f'Part One: {total_load}')
+
+    past_cycles = []
+    tilted = board
+    cycle_handled = False
+    num_cycles = 1_000_000_000
+    i = 0
+    while i < num_cycles:
+        print(f'cycle {i}')
+        for j in range(4):
+            _dir = (4 - j) % 4
+            tilted = tilt(tilted, _dir)
+
+        # Find this cycle in past_cycles
+        if not cycle_handled:
+            for j, old_cycle in enumerate(past_cycles):
+                if old_cycle == tilted:
+                    print(f'Match found i {i} j {j}')
+                    # Found, calc closest to end modulo, 
+                    cycle_length = i - j
+                    cycle_k = (((num_cycles - 1) - i) // cycle_length)
+                    i += cycle_k * cycle_length
+                    print(f'Cycle length is {cycle_length} k is {cycle_k} i set to {i}')
+                    cycle_handled = True
+                    break
+            else:
+                # Not found, append
+                past_cycles.append(tilted)
+        i += 1
+    total_load = calc_load(tilted)
+    print(f'Part Two: {total_load}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

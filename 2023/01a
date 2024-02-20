@@ -1,0 +1,97 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    digit_table = {
+                    '1': '1',
+                    '2': '2',
+                    '3': '3',
+                    '4': '4',
+                    '5': '5',
+                    '6': '6',
+                    '7': '7',
+                    '8': '8',
+                    '9': '9',
+                    '0': '0',
+                  }
+    word_table = {
+                    'one': '1',
+                    'two': '2',
+                    'three': '3',
+                    'four': '4',
+                    'five': '5',
+                    'six': '6',
+                    'seven': '7',
+                    'eight': '8',
+                    'nine': '9',
+                    'zero': '0',
+                 }
+    rev_word_table = { k[::-1]: v for k, v in word_table.items() }
+    forward_table = dict(list(digit_table.items()) + list(word_table.items()))
+    reverse_table = dict(list(digit_table.items()) + list(rev_word_table.items()))
+
+    part_one_values = []
+    part_two_values = []
+    for line in input:
+        line = line.strip()
+
+        line_digits = [d for d in line if d in digit_table]
+        if len(line_digits):
+            # Some part two lines are invalid for part one
+            part_one_values.append(int(line_digits[0] + line_digits[-1]))
+
+        first_token = None
+        last_token = None
+        for i in range(len(line)):
+            if not first_token:
+                for token in forward_table:
+                    if line[i:].startswith(token):
+                        first_token = forward_table[token]
+                        break
+            if not last_token:
+                for token in reverse_table:
+                    if line[len(line)-1-i::-1].startswith(token):
+                        last_token = reverse_table[token]
+                        break
+            if first_token and last_token:
+                break
+        part_two_values.append(int(first_token + last_token))
+    print(f'Part One: {sum(part_one_values)}')
+    print(f'Part Two: {sum(part_two_values)}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

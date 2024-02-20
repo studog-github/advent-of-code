@@ -1,0 +1,72 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+import re
+import operator
+import functools
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    time_line = input.readline().split(':')[1].strip()
+    times = [int(m) for m in re.findall(r'(\d+)\s*', time_line)]
+    #print(times)
+    distance_line = input.readline().split(':')[1].strip()
+    distances = [int(m) for m in re.findall(r'(\d+)\s*', distance_line)]
+    #print(distances)
+
+    all_wins = []
+    for time, distance in zip(times, distances):
+        #print(time, distance)
+        nwins = 0
+        for a in range(1, time):
+            b = time - a
+            if a * b > distance:
+                nwins += 1
+        all_wins.append(nwins)
+    #print(all_wins)
+    print(f'Part One: {functools.reduce(operator.mul, all_wins, 1)}')
+
+    time = int(''.join(time_line.split()))
+    distance = int(''.join(distance_line.split()))
+    #print(time, distance)
+
+    nwins = 0
+    for a in range(1, time):
+        b = time - a
+        if a * b > distance:
+            nwins += 1
+    print(f'Part Two: {nwins}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
