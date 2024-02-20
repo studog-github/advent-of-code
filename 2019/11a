@@ -1,0 +1,110 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from Computer import Computer
+from pprint import pprint
+from math import inf
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    BLACK = 0
+    WHITE = 1
+
+    CCW = 0
+    CW = 1
+
+    NORTH = 0
+    EAST = 1
+    SOUTH = 2
+    WEST = 3
+    NESW = [(0,1), (1,0), (0,-1), (-1,0)]
+
+    hull = {}
+    hx = 0
+    hy = 0
+    facing = NORTH
+
+    def get_hull_colour():
+        if (hx, hy) not in hull:
+            hull[(hx, hy)] = BLACK
+        #print(hull)
+        return hull[(hx, hy)]
+
+    first_action = True
+    def do_robot_actions(value):
+        nonlocal first_action
+        nonlocal facing
+        nonlocal hx
+        nonlocal hy
+        if first_action:
+            hull[(hx, hy)] = value
+        else:
+            if value is CCW:
+                facing = (facing - 1) % len(NESW)
+            else:
+                facing = (facing + 1) % len(NESW)
+            hx += NESW[facing][0]
+            hy += NESW[facing][1]
+        first_action = not first_action
+
+    comp = Computer([int(x) for x in input.readline().strip().split(',')],
+                        fin=get_hull_colour, fout=do_robot_actions)
+    comp.reset()
+    comp.run()
+    print(f'painted: {len(hull)}')
+
+    # Reset and rerun
+    hull = {(0,0):WHITE}
+    hx = 0
+    hy = 0
+    facing = NORTH
+    comp.reset()
+    comp.run()
+
+    minx = inf
+    maxx = -inf
+    miny = inf
+    maxy = -inf
+    for x,y in hull.keys():
+        if x < minx: minx = x
+        if x > maxx: maxx = x
+        if y < miny: miny = y
+        if y > maxy: maxy = y
+    for row in range(maxy, miny - 1, -1):
+        line = ''
+        for col in range(minx, maxx):
+            if (col, row) not in hull:
+                line += '.'
+            else:
+                line += '.' if hull[(col, row)] == BLACK else '#'
+        print(line)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

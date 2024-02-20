@@ -1,0 +1,141 @@
+#!/usr/bin/python3
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+import math
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument("-f", "--file", default=DEFAULT_INPUT,
+                            help="specify the input file (default: %(default)s)", metavar="file")
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print("%s: Error: File '%s' not found" % (THIS, args.file))
+        return 1
+
+    input = open(input_path, "r")
+    if input is None:
+        print("%s: Error: Couldn't open file '%s'" % (THIS, input_path))
+        return 1
+
+    # Main loop
+
+    BLANK = '.'
+    ASTEROID = '#'
+
+    X = 0
+    Y = 1
+    SEES = 2
+    SEEN = 3
+
+    asteroids = []
+    asteroids_xy = {}
+    for y, line in enumerate(input):
+        for x, cell in enumerate(line.strip()):
+            if cell is BLANK:
+                continue
+            asteroid = [x, y, 0, -1]
+            asteroids.append(asteroid)
+            asteroids_xy[(x, y)] = asteroid
+    maxx = x
+    maxy = y
+    #pprint(asteroids)
+
+    max_asteroid = [-1, -1, -1, -1]
+    for index, asteroid in enumerate(asteroids[:-1]):
+        #print(f'{index}: {asteroid}')
+        for next_asteroid in asteroids[index + 1:]:
+            #print(f'    {next_asteroid} ', end='')
+            if next_asteroid[SEEN] == index:
+                #print(f'skipping')
+                continue
+            #print(f'visible')
+            asteroid[SEES] += 1
+            next_asteroid[SEES] += 1
+            deltax = next_asteroid[X] - asteroid[X]
+            deltay = next_asteroid[Y] - asteroid[Y]
+            # Compute the smallest step size
+            gcd = math.gcd(deltax, deltay)
+            deltax /= gcd
+            deltay /= gcd
+            shadowx = next_asteroid[X] + deltax
+            shadowy = next_asteroid[Y] + deltay
+            # Mark shadowed asteroids as seen
+            while shadowx <= maxx and shadowy <= maxy:
+                if (shadowx, shadowy) in asteroids_xy:
+                    # Setting the seen value to the current index means that the seen values
+                    # never need reinitializing
+                    #print(f'        {asteroids_xy[(shadowx, shadowy)]} shadowed')
+                    asteroids_xy[(shadowx, shadowy)][SEEN] = index
+                shadowx += deltax
+                shadowy += deltay
+        if asteroid[SEES] > max_asteroid[SEES]:
+            max_asteroid = asteroid
+    print(f'{max_asteroid}')
+
+    # Reset all the asteroids' 'has been seen' value
+    for asteroid in asteroids:
+        asteroid[SEEN] = False
+
+    spokes = {}
+    for index, asteroid in enumerate(asteroids):
+        if asteroid[SEEN]:
+            continue
+        if asteroid == max_asteroid:
+            continue
+        deltax = asteroid[X] - max_asteroid[X]
+        deltay = asteroid[Y] - max_asteroid[Y]
+        # Compute the smallest step size
+        gcd = math.gcd(deltax, deltay)
+        deltax /= gcd
+        deltay /= gcd
+        if deltax == 0:
+            if deltay < 0:
+                slope = -math.inf
+            else:
+                slope = math.inf
+        else:
+            slope = float(deltay/deltax)
+        degrees = math.degrees(math.atan(slope))
+        if deltax < 0:
+            degrees += 180
+
+        spokes[degrees] = []
+
+        nextx = max_asteroid[X] + deltax
+        nexty = max_asteroid[Y] + deltay
+        # Mark shadowed asteroids as seen
+        while 0 <= nextx <= maxx and 0 <= nexty <= maxy:
+            if (nextx, nexty) in asteroids_xy:
+                asteroids_xy[(nextx, nexty)][SEEN] = True
+                spokes[degrees].append(asteroids_xy[(nextx, nexty)])
+            nextx += deltax
+            nexty += deltay
+    #pprint(spokes)
+
+    i = 1
+    while len(spokes) > 0:
+        for degrees, asteroid_list in sorted(spokes.items()):
+            if i == 200:
+                print(f'{i}: {asteroid_list[0]} {asteroid_list[0][X] * 100 + asteroid_list[0][Y]}')
+            if len(asteroid_list) == 1:
+                del spokes[degrees]
+            else:
+                del asteroid_list[0]
+            i += 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
