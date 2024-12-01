@@ -1,0 +1,67 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+    left_list = []
+    right_list = []
+    for line in input:
+        l, r = line.split()
+        left_list.append(int(l))
+        right_list.append(int(r))
+    left_list.sort()
+    right_list.sort()
+    diff_sum = 0
+    for l, r in zip(left_list, right_list):
+        diff = abs(l - r)
+        #print(f'{l} - {r} = {diff}')
+        diff_sum += diff
+    print(f'Part 1: Total diff: {diff_sum}')
+
+    right_list_counts = Counter(right_list)
+    sim_total = 0
+    for l in left_list:
+        if l not in right_list_counts:
+            mult = 0
+        else:
+            mult = right_list_counts[l]
+        sim = l * mult
+        sim_total += sim
+        #print(f'{l} * {mult} = {sim}')
+    print(f'Part 2: Total sim: {sim_total}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
