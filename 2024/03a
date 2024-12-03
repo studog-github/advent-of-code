@@ -1,0 +1,60 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+import re
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+    pattern = re.compile(r'(?:mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don\'t\(\))')
+    a_mul_total = 0
+    b_enabled = True
+    b_mul_total = 0
+    for line in input:
+        for m in pattern.finditer(line):
+            if m.group() == 'do()':
+                b_enabled = True
+            elif m.group() == 'don\'t()':
+                b_enabled = False
+            else:
+                mul_result = int(m.group(1)) * int(m.group(2))
+                a_mul_total += mul_result
+                if b_enabled:
+                    b_mul_total += mul_result
+            #print(m.group(), m.groups(), a_mul_total, b_enabled, b_mul_total)
+    print(f'Part A mul() sum: {a_mul_total}')
+    print(f'Part B mul() sum: {b_mul_total}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
