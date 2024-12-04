@@ -1,0 +1,119 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+    board = []
+    #                  N       NE      E      SE     S      SW      W       NW
+    compass_deltas = [ (-1,0), (-1,1), (0,1), (1,1), (1,0), (1,-1), (0,-1), (-1,-1) ]
+    for line in input:
+        board.append(line.strip())
+    #dump_map(board)
+    maxy = len(board)
+    maxx = len(board[0])
+
+    # input board is readonly, so can be a [ list of strings ], output board must be a [ list of characters ]
+    # to avoid attempting to mutate a string
+    # NOTE: replication operator creates references to same object, not, creates object. Hence the list
+    #   comprehension
+    xmas_board = [['.'] * maxx for i in range(maxy)]
+    num_xmas_found = 0
+    for y, row in enumerate(board):
+        for x, c in enumerate(row):
+            if c != 'X':
+                continue
+            # Iterate around the compass
+            for dy, dx in compass_deltas:
+                endy = y + dy * len('MAS')
+                endx = x + dx * len('MAS')
+                if endy < 0 or endy >= maxy or endx < 0 or endx >= maxx:
+                    # End of the target string would be off the board, so skip this direction
+                    continue
+                tary = y
+                tarx = x
+                for tarc in 'MAS':
+                    tary += dy
+                    tarx += dx
+                    if board[tary][tarx] != tarc:
+                        break
+                else:
+                    num_xmas_found += 1
+                    tary = y
+                    tarx = x
+                    xmas_board[tary][tarx] = 'X'
+                    for tarc in 'MAS':
+                        tary += dy
+                        tarx += dx
+                        xmas_board[tary][tarx] = tarc
+    print(f'Part A number of XMAS found: {num_xmas_found}')
+
+    # input board is readonly, so can be a [ list of strings ], output board must be a [ list of characters ]
+    # to avoid attempting to mutate a string
+    # NOTE: replication operator creates references to same object, not, creates object. Hence the list
+    #   comprehension
+    x_mas_board = [['.'] * maxx for i in range(maxy)]
+    num_x_mas_found = 0
+    for y, row in enumerate(board):
+        for x, c in enumerate(row):
+            if c != 'A':
+                continue
+            ay = y - 1
+            ax = x - 1
+            by = y - 1
+            bx = x + 1
+            cy = y + 1
+            cx = x + 1
+            dy = y + 1
+            dx = x - 1
+            if (ay < 0     or ax < 0     or by < 0     or bx >= maxx or
+                cy >= maxy or cx >= maxx or dy >= maxy or dx < 0     ):
+                # An end of the X would be off the board, so skip this direction
+                continue
+            if (((board[ay][ax] == 'M' and board[cy][cx] == 'S') or
+                 (board[ay][ax] == 'S' and board[cy][cx] == 'M')) and
+                ((board[by][bx] == 'M' and board[dy][dx] == 'S') or
+                 (board[by][bx] == 'S' and board[dy][dx] == 'M'))):
+
+                num_x_mas_found += 1
+                x_mas_board[y][x] = board[y][x]
+                x_mas_board[ay][ax] = board[ay][ax]
+                x_mas_board[by][bx] = board[by][bx]
+                x_mas_board[cy][cx] = board[cy][cx]
+                x_mas_board[dy][dx] = board[dy][dx]
+    print(f'Part B number of X-MAS found: {num_x_mas_found}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
