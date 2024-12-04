@@ -146,7 +146,12 @@ def neighbours_b(x, y, minx=-math.inf, miny=-math.inf, maxx=math.inf, maxy=math.
     if prevx >= minx:
         yield prevx, y
 
-# Dump a map
+# Dump a list of strings
 def dump_map(m):
     for l in m:
         print(l)
+
+# Dump a list of characters
+def dump_map_join(m):
+    for l in m:
+        print(''.join(l))
