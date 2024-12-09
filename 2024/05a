@@ -1,0 +1,114 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+import functools
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+    rules = {}
+    for i, line in enumerate(input):
+        line = line.strip()
+        if line == '':
+            break
+        #print(line)
+        a, b = line.split('|')
+        a = int(a)
+        b = int(b)
+        if a not in rules:
+            rules[a] = set([b])
+        else:
+            rules[a].add(b)
+    #print(f'{i=} rules')
+    #for i, rule in enumerate(sorted(list(rules))):
+        #print(f'{rule} {sorted(list(rules[rule]))}')
+
+    #print()
+
+    updates = []
+    mids_sum = 0
+    for i, line in enumerate(input):
+        line = line.strip()
+        #print(line)
+        update = [int(i) for i in line.split(',')]
+        updates.append(update)
+    #print(f'{i=} updates')
+    #for update in updates:
+        #print(update)
+
+    sum_of_middles = 0
+    unordered_updates = []
+    for u, update in enumerate(updates):
+        #print(f'Checking update {u} {update}...')
+        for i, h in enumerate(update[:-1]):
+            #print(f'{h=}', end='')
+            if h not in rules:
+                #print(f' UNORDERED, {h=} not in rules')
+                unordered_updates.append(update)
+                break
+            ordered = True
+            for t in update[i+1:]:
+                #print(f' {t=}', end='')
+                if t not in rules[h]:
+                    ordered = False
+                    #print(f' UNORDERED, {t=} not in {h=}')
+                    break
+            if not ordered:
+                unordered_updates.append(update)
+                break
+            #print()
+        else:
+            mid = update[len(update) // 2]
+            sum_of_middles += mid
+            #print(f'   ordered, {mid=} {sum_of_middles=}')
+    print(f'Part A: sum of middles = {sum_of_middles}')
+
+    def update_comparator(a, b):
+        if a in rules and b in rules[a]:
+            return -1
+        elif b in rules and a in rules[b]:
+            return 1
+        return 0
+
+    sum_of_fixed_middles = 0
+    for update in unordered_updates:
+        #print(update)
+        update.sort(key=functools.cmp_to_key(update_comparator))
+        #print(update)
+        mid = update[len(update) // 2]
+        sum_of_fixed_middles += mid
+    print(f'Part B: sum of fixed middles = {sum_of_fixed_middles}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
