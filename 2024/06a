@@ -86,7 +86,7 @@ def main():
             return ny, nx, f
 
     def loop(y, x, f, loop_num_calls):
-        print(f'loop({y=}, {x=}, {f=}, {loop_num_calls=})')
+        #print(f'loop({y=}, {x=}, {f=}, {loop_num_calls=})')
 
         target_call = 0
         if (loop_num_calls == target_call) or (target_call == -1):
@@ -104,10 +104,10 @@ def main():
             if a == 'Exit' or a == 'Double turn':
                 if debug:
                     dump_map_join(loopmap)
-                if a == 'Exit':
-                    print(f'A1 exits the grid')
-                else:
-                    print(f'A1 double turns')
+                #if a == 'Exit':
+                    #print(f'A1 exits the grid')
+                #else:
+                    #print(f'A1 double turns')
                 return False
             if debug:
                 print(f'A1 step {a=}')
@@ -117,31 +117,31 @@ def main():
             if a == 'Exit' or a == 'Double turn':
                 if debug:
                     dump_map_join(loopmap)
-                if a == 'Exit':
-                    print(f'A2 exits the grid')
-                else:
-                    print(f'A2 double turns')
+                #if a == 'Exit':
+                    #print(f'A2 exits the grid')
+                #else:
+                    #print(f'A2 double turns')
                 return False
             if debug:
-                print(f'A2 step {a=}')
+                #print(f'A2 step {a=}')
                 loopmap[a[0]][a[1]] = 'A'
                 #dump_map_join(loopmap)
             if a == b:
-                if debug:
-                    print()
-                    dump_map_join(loopmap)
-                print(f'{a} == {b} {a == b}')
+                #if debug:
+                    #print()
+                    #dump_map_join(loopmap)
+                #print(f'{a} == {b} {a == b}')
                 return True
             b = step(b)
             # No check required; b is only ever visiting where a has already gone therefore is only ever on the grid
             if debug:
-                print(f'B1 step {b=}')
+                #print(f'B1 step {b=}')
                 loopmap[b[0]][b[1]] = 'B'
                 #dump_map_join(loopmap)
 
     num_loop_calls = 0
     loop_causers = []
-    print(f'START is {y=} {x=}')
+    #print(f'START is {y=} {x=}')
     while True:
         nexty = guardy + deltay
         nextx = guardx + deltax
