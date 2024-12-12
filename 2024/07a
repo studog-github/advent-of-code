@@ -1,0 +1,138 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+
+    def el_add(a, b):
+        return a + b
+    def el_mult(a, b):
+        return a * b
+    def el_cat(a, b):
+        return int(str(a) + str(b))
+
+    part_a_ops = [el_add, el_mult]
+    part_a_ops_str = ['ADD', 'MULT']
+    part_a_ops_sym = ['+', '*']
+
+    part_b_ops = [el_add, el_mult, el_cat]
+    part_b_ops_str = ['ADD', 'MULT', 'CAT']
+    part_b_ops_sym = ['+', '*', '||']
+
+    def could_be_true_a(a, vals, indent='', eq_str=''):
+        if eq_str == '':
+            #print()
+            eq_str = f'{vals[0]}'
+        #print(f'{indent}could_be_true_a({a=:_}, {vals=})')
+        for i, op in enumerate(part_a_ops):
+            #print(f'{indent}{part_a_ops_str[i]} {vals[0]:_} {vals[1]:_}')
+            new_eq_str = f'{eq_str} {part_a_ops_sym[i]} {vals[1]}'
+            r = op(vals[0], vals[1])
+            if r == a and len(vals) == 2:
+                #print(f'{indent}FOUND')
+                #print(f'{new_eq_str} = {r} == {a} ? {r == a}')
+                return True
+            #if r > a:
+                #print(f'{indent}{r=:_} is TOO LARGE {a=:_}')
+                #return False
+                #next
+            if len(vals) > 2:
+                new_vals = [r] + vals[2:]
+                if could_be_true_a(a, new_vals, indent + '  ', new_eq_str):
+                    return True
+            if len(vals) == 2:
+                #eval_res = eval(new_eq_str)
+                #print(f'{new_eq_str} = {r} == {a} ? {r == a} :: {eval_res} == {a} ?? {eval_res == a}')
+                pass
+        #print(f'{indent}NO SOLUTIONS')
+        return False
+
+    def could_be_true_b(a, vals, indent='', eq_str=''):
+        if eq_str == '':
+            #print()
+            eq_str = f'{vals[0]}'
+        #print(f'{indent}could_be_true_b({a=:_}, {vals=})')
+        for i, op in enumerate(part_b_ops):
+            #print(f'{indent}{part_b_ops_str[i]} {vals[0]:_} {vals[1]:_}')
+            new_eq_str = f'{eq_str} {part_b_ops_sym[i]} {vals[1]}'
+            r = op(vals[0], vals[1])
+            if r == a and len(vals) == 2:
+                #print(f'{indent}FOUND')
+                #print(f'{new_eq_str} = {r} == {a} ? {r == a}')
+                return True
+            #if r > a:
+                #print(f'{indent}{r=:_} is TOO LARGE {a=:_}')
+                #return False
+                #next
+            if len(vals) > 2:
+                new_vals = [r] + vals[2:]
+                if could_be_true_b(a, new_vals, indent + '  ', new_eq_str):
+                    return True
+            if len(vals) == 2:
+                #eval_res = eval(new_eq_str)
+                #print(f'{new_eq_str} = {r} == {a} ? {r == a} :: {eval_res} == {a} ?? {eval_res == a}')
+                pass
+        #print(f'{indent}NO SOLUTIONS')
+        return False
+
+    a_sum_of_trues = 0
+    b_sum_of_trues = 0
+    for i, line in enumerate(input, 1):
+        cal_result, rest_of_line = line.split(':')
+        cal_result = int(cal_result)
+        values = [int(e) for e in rest_of_line.split()]
+        #print(f'{i=} {cal_result}: {values}')
+
+        if could_be_true_a(cal_result, values):
+            a_sum_of_trues += cal_result
+            #print(f'-= {cal_result=} {a_sum_of_trues=}')
+        else:
+            #print(f'-- {cal_result=} {values}')
+            pass
+
+        if could_be_true_b(cal_result, values):
+            b_sum_of_trues += cal_result
+            #print(f'-= {cal_result=} {b_sum_of_trues=}')
+        else:
+            #print(f'-- {cal_result=} {values}')
+            pass
+    #print(f'Processed {i=} lines')
+
+    print(f'Part A: Sum of could-be-true questions is {a_sum_of_trues}')
+    print(f'Part B: Sum of could-be-true questions is {b_sum_of_trues}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
