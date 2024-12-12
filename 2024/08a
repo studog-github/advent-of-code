@@ -1,0 +1,89 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+
+    grid = []
+    antennas = {}
+    for y, line in enumerate(input):
+        line = list(line.strip())
+        grid.append(line)
+        for x, a in enumerate(line):
+            if a == '.':
+                continue
+            if a not in antennas:
+                antennas[a] = [(y, x)]
+            else:
+                antennas[a].append((y, x))
+    #dump_map_join(grid)
+
+    maxy = len(grid)
+    maxx = len(grid[0])
+
+    antinodes_a = [['.'] * maxx for i in range(maxy)]
+    antinodes_b = [['.'] * maxx for i in range(maxy)]
+    #print()
+    #dump_map_join(antinodes_a)
+
+    for a in antennas:
+        for p1, p2 in itertools.combinations(antennas[a], 2):
+            a_delta = manhattan_delta(p1, p2)
+            p1_anode = tuple(a - b for a, b in zip(p1, a_delta))
+            if (0 <= p1_anode[0] < maxy) and (0 <= p1_anode[1] < maxx):
+                antinodes_a[p1_anode[0]][p1_anode[1]] = '#'
+            p2_anode = tuple(a + b for a, b in zip(p2, a_delta))
+            if (0 <= p2_anode[0] < maxy) and (0 <= p2_anode[1] < maxx):
+                antinodes_a[p2_anode[0]][p2_anode[1]] = '#'
+            #print(f'-= {a=} {p1=} {p2=} {a_delta=} {p1_anode=} {p2_anode=}')
+
+            # Part B
+            while (0 <= p1[0] < maxy) and (0 <= p1[1] < maxx):
+                antinodes_b[p1[0]][p1[1]] = '#'
+                p1 = tuple(a - b for a, b in zip(p1, a_delta))
+            while (0 <= p2[0] < maxy) and (0 <= p2[1] < maxx):
+                antinodes_b[p2[0]][p2[1]] = '#'
+                p2 = tuple(a + b for a, b in zip(p2, a_delta))
+
+    #dump_map_join(antinodes_a)
+    counts = Counter(''.join([''.join(r) for r in antinodes_a]))
+    print(f'Part A: Total antinodes is {counts["#"]}')
+    #dump_map_join(antinodes_b)
+    counts = Counter(''.join([''.join(r) for r in antinodes_b]))
+    print(f'Part B: Total antinodes is {counts["#"]}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
