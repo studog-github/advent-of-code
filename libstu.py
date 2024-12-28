@@ -108,7 +108,7 @@ def dijkstra(grid, start, end=None):
         nodex,nodey = node
         scanned[nodey][nodex] = True
         node_dist = distances[nodey][nodex]
-        for n in neighbours(node, limits=limits):
+        for n in neighbours_a(node, limits=limits):
             nx,ny = n
             if scanned[ny][nx]:
                 continue
