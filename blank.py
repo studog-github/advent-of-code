@@ -7,6 +7,7 @@ from libstu import *
 from pprint import pprint
 from copy import deepcopy
 import itertools
+import functools
 import math
 from collections import Counter
 
