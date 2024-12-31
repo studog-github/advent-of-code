@@ -140,7 +140,7 @@ def main():
         rside = len(region[2])
         rdisc = rarea * rside
         total_disc += rdisc
-        #print(f'Region {i:3d} Type {rtype} Area {rarea} Perimeter {rperi} Price {rcost} Sides {rside} Discout {rdisc}')
+        #print(f'Region {i:3d} Type {rtype} Area {rarea} Perimeter {rperi} Price {rcost} Sides {rside} Discount {rdisc}')
         #print(f'  {region[0]}')
         #print(f'  {region[1]}')
         #print(f'  {region[2]}')
