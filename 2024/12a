@@ -1,0 +1,154 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import functools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+
+    #                  N       E      S      W
+    compass_deltas = [ (-1,0), (0,1), (1,0), (0,-1) ]
+
+    grid = []
+    for line in input:
+        line = list(line.strip())
+        grid.append(line)
+    #dump_map_join(grid)
+
+    miny = 0
+    minx = 0
+    maxy = len(grid)
+    maxx = len(grid[0])
+
+    # Region format [ [plots (y,x) in region], [fences (y,x,d) on region], [sides ((sy,sx),(ey,ex),d) ]
+    regions = []
+    checked = [[False] * maxx for i in range(maxy)]
+
+    for gy in range(maxy):
+        for gx in range(maxx):
+            if checked[gy][gx]:
+                continue
+            plots = []
+            fences = []
+            region_type = grid[gy][gx]
+            # Find region
+            check_plots = [(gy, gx)]
+            while check_plots:
+                py, px = check_plots.pop(0)
+                if checked[py][px]:
+                    continue
+                plots.append((py, px))
+                checked[py][px] = True
+                for d, (dy, dx) in enumerate(compass_deltas):
+                    ny, nx = py + dy, px + dx
+                    if miny <= ny < maxy and minx <= nx < maxx and grid[ny][nx] == region_type:
+                        # Neighbour is in the grid and is the same region type; add to queue
+                        check_plots.append((ny, nx))
+                    else:
+                        # Neighbour is outside grid or wrong region type; add fence
+                        fences.append((py, px, d))
+            regions.append([plots, fences])
+
+    # This works in part because the way the fence pieces are stored (yx position and direction of fence) means
+    # someone at the position looking at the fence is always looking "outwards".
+    for region in regions:
+        sides = []
+        fences = deepcopy(region[1])
+        # Every region has a top-left corner which guarantees starting at the start of a side vs the middle
+        sy, sx, d = fences[0]
+        while fences:
+            #print(f'{fences=}')
+            fences.remove((sy, sx, d))
+            #print(f'  Remove {(sy, sx, d)}')
+            nd = (d + 1) % len(compass_deltas)
+            dy, dx = compass_deltas[nd]
+            ny, nx = sy, sx
+            while (ny + dy, nx + dx, d) in fences:
+                ny, nx = ny + dy, nx + dx
+                fences.remove((ny, nx, d))
+                #print(f'    Remove {(ny, nx, d)}')
+            sides.append(((sy,sx),(ny,nx),d))
+            #print(f'{sides=}')
+            if (ny, nx, nd) in fences:
+                # Inner turn
+                sy, sx, d = ny, nx, nd
+                #print(f'  Inner turn to {(sy, sx, d)}')
+            elif fences:
+                # Outer turn or disconnected fences
+                ny, nx = ny + dy, nx + dx
+                dy, dx = compass_deltas[d]
+                ny, nx = ny + dy, nx + dx
+                nd = (d - 1) % len(compass_deltas)
+                if (ny, nx, nd) in fences:
+                    sy, sx, d = ny, nx, nd
+                    #print(f'  Outer turn to {(sy, sx, d)}')
+                else:
+                    # Select a fence piece at random
+                    sy, sx, d = fences[0]
+                    #print(f'  New side {(sy, sx, d)}', end='')
+                    # This might be [ not the start ] of a side, slide backwards to the beginning
+                    pd = (d - 1) % len(compass_deltas)
+                    dy, dx = compass_deltas[pd]
+                    py, px = sy, sx
+                    while (py + dy, px + dx, d) in fences:
+                        py, px = py + dy, px + dx
+                    sy, sx = py, px
+                    #print(f' beginning at {(sy, sx, d)}')
+        region.append(sides)
+        #print()
+
+    total_cost = 0
+    total_disc = 0
+    #print()
+    #print(f'Number of regions: {len(regions)}')
+    for i, region in enumerate(regions):
+        y, x = region[0][0]
+        rtype = grid[y][x]
+        rarea = len(region[0])
+        rperi = len(region[1])
+        rcost = rarea * rperi
+        total_cost += rcost
+        rside = len(region[2])
+        rdisc = rarea * rside
+        total_disc += rdisc
+        #print(f'Region {i:3d} Type {rtype} Area {rarea} Perimeter {rperi} Price {rcost} Sides {rside} Discout {rdisc}')
+        #print(f'  {region[0]}')
+        #print(f'  {region[1]}')
+        #print(f'  {region[2]}')
+    print(f'Part A: Total cost is {total_cost}')
+    print(f'Part A: Total disc is {total_disc}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
