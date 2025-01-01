@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import functools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+
+    # Machine format: [ (y, x), (y, x), (y, x) ]
+    # Button A delta, Button B delta, prize coordinates
+    BUTTON_A = 0
+    BUTTON_B = 1
+    PRIZE = 2
+
+    def button_cost(button_values):
+        a, b = button_values
+        return a * 3 + b * 1
+
+    machines = []
+    new_machine = []
+    for line in input:
+        line = line.strip()
+        #print(f'-= {line}')
+        if not line:
+            machines.append(new_machine)
+            # Start a new machine
+            new_machine = []
+            continue
+        typ, line = line.split(':')
+        line = line.strip()
+        #print(f'-= {typ=} {line=}')
+        x, y = line.split()
+        #print(f'-= {x=} {y=}')
+        if typ == 'Prize':
+            x = x.split(',')[0]
+            x = x.split('=')[1]
+            y = y.split('=')[1]
+            #print(f'-= {x=} {y=}')
+            new_machine.append((int(y), int(x)))
+        else:
+            x = x.split(',')[0]
+            x = x.split('+')[1]
+            y = y.split('+')[1]
+            #print(f'-= {x=} {y=}')
+            new_machine.append((int(y), int(x)))
+    machines.append(new_machine)
+
+    part_a_total = 0
+    part_b_total = 0
+    #for machine in machines:
+    #    win_list = []
+    #    ay, ax = machine[BUTTON_A]
+    #    by, bx = machine[BUTTON_B]
+    #    pzy, pzx = machine[PRIZE]
+    #    m = 0
+    #    while m * ay < pzy:
+    #        print('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b', end='')
+    #        print(f'{m=:_}', end='', flush=True)
+    #        n = (pzy - m * ay) // by
+    #        if m * ay + n * by == pzy and m * ax + n * bx == pzx:
+    #            win_list.append((m, n))
+    #        m += 1
+    #    print('\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b', end='')
+    #    win_min = min(win_list, default = None, key = button_cost)
+    #    if win_min:
+    #        win_cost = button_cost(win_min)
+    #    else:
+    #        win_cost = 0
+    #    part_a_cost += win_cost
+    #    print(f'A: {win_cost} {win_min} {win_list} {machine}')
+    for machine in machines:
+        ay, ax = machine[BUTTON_A]
+        by, bx = machine[BUTTON_B]
+        py, px = machine[PRIZE]
+        am = (bx*py - by*px) / (bx*ay - by*ax)
+        an = (ax*py - ay*px) / (ax*by - ay*bx)
+        if am == int(am) and an == int(an):
+            part_a_cost = button_cost((int(am), int(an)))
+            part_a_total += part_a_cost
+        else:
+            part_a_cost = None
+        py, px = py + 10_000_000_000_000, px + 10_000_000_000_000
+        bm = (bx*py - by*px) / (bx*ay - by*ax)
+        bn = (ax*py - ay*px) / (ax*by - ay*bx)
+        if bm == int(bm) and bn == int(bn):
+            part_b_cost = button_cost((int(bm), int(bn)))
+            part_b_total += part_b_cost
+        else:
+            part_b_cost = None
+        #print(f'-= {machine} {am=} {an=} {part_a_cost=} |{part_a_total}| {bm=} {bn=} {part_b_cost=} |{part_b_total}|')
+    print(f'Part A: Total cost is {part_a_total}')
+    print(f'Part B: Total cost is {part_b_total}')
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
