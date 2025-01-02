@@ -2,7 +2,6 @@ from copy import deepcopy
 from functools import reduce
 import itertools
 import math
-import fractions
 import heapq
 
 def rotate(l, n, d='r'):
@@ -123,7 +122,7 @@ def dijkstra(grid, start, end=None):
 # lcm from
 # https://stackoverflow.com/a/51716940/1352761
 def lcm(a, b):
-    return a * b // fractions.gcd(a, b)
+    return a * b // math.gcd(a, b)
 
 # Neighbour generator
 def neighbours_b(x, y, minx=-math.inf, miny=-math.inf, maxx=math.inf, maxy=math.inf, orthogonal=False):
