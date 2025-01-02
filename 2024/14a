@@ -1,0 +1,110 @@
+#!/usr/bin/env python
+
+import sys
+import os
+import argparse
+from libstu import *
+from pprint import pprint
+from copy import deepcopy
+import itertools
+import functools
+import math
+from collections import Counter
+
+THIS = os.path.basename(sys.argv[0])
+DEFAULT_INPUT = THIS + "-input"
+DEFAULT_X = 101
+DEFAULT_Y = 103
+DEFAULT_S = 100
+
+def main():
+    arg_parser = argparse.ArgumentParser(prog=THIS)
+    arg_parser.add_argument('-f', '--file', default=DEFAULT_INPUT,
+                            help='specify the input file (default: %(default)s)', metavar='file')
+    arg_parser.add_argument('-x', default=DEFAULT_X, type=int, help='x (width) (default: %(default)s)')
+    arg_parser.add_argument('-y', default=DEFAULT_Y, type=int, help='y (height) (default: %(default)s)')
+    arg_parser.add_argument('-s', default=DEFAULT_S, type=int, help='seconds to run (default: %(default)s)')
+    args = arg_parser.parse_args()
+
+    # Open input file
+
+    input_path = os.path.abspath(args.file)
+    if not os.path.exists(input_path):
+        print(f"{THIS}: Error: File '{args.file}' not found")
+        return 1
+
+    try:
+        input = open(input_path, 'r')
+    except:
+        print(f"{THIS}: Error: Couldn't open file '{input_path}'")
+        return 1
+
+    # Main loop
+
+    # Robot format: [ (y, x), (dy, dx) ]
+    robots = []
+    for line in input:
+        line = line.strip().split()
+        x, y = [int(e) for e in line[0].split('=')[1].split(',')]
+        dx, dy = [int(e) for e in line[1].split('=')[1].split(',')]
+        #print(f'{line} ({x}, {y}), ({dx}, {dy})')
+        robots.append([ (y, x), (dy, dx) ])
+
+    miny = 0
+    minx = 0
+    maxy = args.y
+    maxx = args.x
+    halfy = maxy // 2
+    halfx = maxx // 2
+
+    secs = args.s
+    quads = [ 0, 0, 0, 0 ]
+    for robot in robots:
+        (y, x), (dy, dx) = robot
+        ny, nx = (y + secs * dy) % maxy, (x + secs * dx) % maxx
+        if miny <= ny < halfy:
+            if minx <= nx < halfx:
+                quads[0] += 1
+            elif halfx < nx < maxx:
+                quads[1] += 1
+        elif halfy < ny < maxy:
+            if minx <= nx < halfx:
+                quads[2] += 1
+            elif halfx < nx < maxx:
+                quads[3] += 1
+        #print(f'{robot} END ({ny}, {nx} {quads=})')
+    sfact = math.prod(quads)
+    print(f'Part A: Safety factor is {sfact}')
+
+    base_robots = deepcopy(robots)
+    base_grid = [['.'] * maxx for i in range(maxy)]
+    #for i in range(1, max(maxy, maxx)):
+    #for i in range(1, 10_000):
+    for i in range(1, 2):
+        #print()
+        #print(f'Time {i=}')
+        grid = deepcopy(base_grid)
+        for robot in robots:
+            (y, x), (dy, dx) = robot
+            y, x = (y + dy) % maxy, (x + dx) % maxx
+            robot[0] = (y, x)
+            grid[y][x] = '#'
+        #dump_map_join(grid)
+
+    secs = 7672
+    print(f'Part B: Number of seconds to easter egg is {secs}')
+
+    robots = deepcopy(base_robots)
+    grid = deepcopy(base_grid)
+    for robot in robots:
+        (y, x), (dy, dx) = robot
+        y, x = (y + secs * dy) % maxy, (x + secs * dx) % maxx
+        grid[y][x] = '#'
+    print()
+    dump_map_join(grid)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
